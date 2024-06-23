@@ -25,7 +25,7 @@
 /// <reference types="mongoose/types/inferrawdoctype" />
 import { Types } from "mongoose";
 import IUserPermissionRepository from "../../../../application/contract/data_access/authentication/permission_repository";
-import UserPermission from "../../../../domain/authentication/user_permission";
+import UserPermission from "../../../../domain/authentication/entity/user_permission";
 import { BaseRepository } from "../common/base_repository";
 export default class UserPermissionRepository extends BaseRepository<UserPermission, Types.ObjectId> implements IUserPermissionRepository {
     constructor();

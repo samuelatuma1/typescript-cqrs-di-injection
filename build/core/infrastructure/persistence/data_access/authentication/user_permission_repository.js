@@ -14,7 +14,6 @@ const user_permission_config_1 = require("../../entity_configuration/authenticat
 const tsyringe_1 = require("tsyringe");
 let UserPermissionRepository = class UserPermissionRepository extends base_repository_1.BaseRepository {
     constructor() {
-        console.log("Repo running");
         super(user_permission_config_1.userPermissionModel);
     }
 };

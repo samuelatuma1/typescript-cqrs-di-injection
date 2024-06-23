@@ -1,10 +1,10 @@
-import { inject, injectable } from "tsyringe";
+import { inject, injectable, Lifecycle, scoped } from "tsyringe";
 import IEventTracer from "../../application/contract/observability/event_tracer";
 import ILogger, { IILogger } from "../../application/contract/observability/logger";
 import RandomUtility from "../../application/common/utilities/random_utility";
 import DateUtility from "../../application/common/utilities/date_utility";
 
-@injectable()
+@scoped(Lifecycle.ContainerScoped)
 export default class EventTracer implements IEventTracer{
     eventId: string;
     request: object | null;
@@ -46,20 +46,39 @@ export default class EventTracer implements IEventTracer{
     say(message: string): void {
         this.addMessageToTimeline(message);
     }
+
+    resetTracer = (): void => {
+        this.eventId = RandomUtility.newGuid();
+        this.request = null;
+        this.start = DateUtility.getUTCNow();
+        this.end = DateUtility.getUTCNow();
+        this.timeline = {};
+        this.verdict = "PENDING"
+        this.counter = 0;
+        this.response = null;
+    }
     isException = (): void => {
         this.verdict = "Exception";
         this.logger.logException(this.eventId, this.getEventTracerObject());
-        
+        this.resetTracer();
     }
-    isSuccess(): void {
+    isSuccess = (): void => {
         this.verdict = "Success";
         this.logger.logInfo(this.eventId, this.getEventTracerObject());
+        this.resetTracer();
     }
     isError(): void {
         this.verdict = "Error";
         this.logger.logWarning(this.eventId, this.getEventTracerObject());
+        this.resetTracer();
     }
-
+    isSuccessWithResponseAndMessage = (response: any, message?: string): void => {
+        this.response = response;
+        if (message){
+            this.addMessageToTimeline(message);
+        }
+        this.isSuccess();
+    }
     isExceptionWithMessage(message: string): void {
         this.addMessageToTimeline(message);
         this.isException();

@@ -24,7 +24,7 @@
 /// <reference types="mongoose" />
 /// <reference types="mongoose/types/inferschematype" />
 /// <reference types="mongoose/types/inferrawdoctype" />
-import UserPermission from "../../../../domain/authentication/user_permission";
+import UserPermission from "../../../../domain/authentication/entity/user_permission";
 export declare const userPermissionModel: import("mongoose").Model<UserPermission, {}, {}, {}, import("mongoose").Document<unknown, {}, UserPermission> & UserPermission & Required<{
     _id: import("mongoose").Types.ObjectId;
 }>, any>;

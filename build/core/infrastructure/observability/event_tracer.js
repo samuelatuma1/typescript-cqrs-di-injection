@@ -61,18 +61,38 @@ let EventTracer = class EventTracer {
     say(message) {
         this.addMessageToTimeline(message);
     }
+    resetTracer = () => {
+        this.eventId = random_utility_1.default.newGuid();
+        this.request = null;
+        this.start = date_utility_1.default.getUTCNow();
+        this.end = date_utility_1.default.getUTCNow();
+        this.timeline = {};
+        this.verdict = "PENDING";
+        this.counter = 0;
+        this.response = null;
+    };
     isException = () => {
         this.verdict = "Exception";
         this.logger.logException(this.eventId, this.getEventTracerObject());
+        this.resetTracer();
     };
-    isSuccess() {
+    isSuccess = () => {
         this.verdict = "Success";
         this.logger.logInfo(this.eventId, this.getEventTracerObject());
-    }
+        this.resetTracer();
+    };
     isError() {
         this.verdict = "Error";
         this.logger.logWarning(this.eventId, this.getEventTracerObject());
+        this.resetTracer();
     }
+    isSuccessWithResponseAndMessage = (response, message) => {
+        this.response = response;
+        if (message) {
+            this.addMessageToTimeline(message);
+        }
+        this.isSuccess();
+    };
     isExceptionWithMessage(message) {
         this.addMessageToTimeline(message);
         this.isException();
@@ -87,7 +107,7 @@ let EventTracer = class EventTracer {
     }
 };
 EventTracer = __decorate([
-    (0, tsyringe_1.injectable)(),
+    (0, tsyringe_1.scoped)(tsyringe_1.Lifecycle.ContainerScoped),
     __param(0, (0, tsyringe_1.inject)(logger_1.IILogger)),
     __metadata("design:paramtypes", [Object])
 ], EventTracer);

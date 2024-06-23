@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import UserPermission from "../../../../domain/authentication/user_permission";
+import UserPermission from "../../../../domain/authentication/entity/user_permission";
 
 var permissionSchema = new Schema<UserPermission>({
     createdAt: { type: Date, required: true },
@@ -7,7 +7,7 @@ var permissionSchema = new Schema<UserPermission>({
     recordStatus: {type: String, required: true},
 
     name: {type: String, required: true},
-    desc: {type: String, default: ""}
+    desc: {type: String, default: ""},
 });
 
 export const userPermissionModel  = model<UserPermission>("UserPermission", permissionSchema);

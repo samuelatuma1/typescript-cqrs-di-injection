@@ -23,8 +23,9 @@
 /// <reference types="mongoose/types/virtuals" />
 /// <reference types="mongoose/types/inferschematype" />
 /// <reference types="mongoose/types/inferrawdoctype" />
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 import IBaseRepository from "../common/base_repository";
-import UserRole from "../../../../domain/authentication/user_role";
-export default interface IRoleRepository extends IBaseRepository<UserRole, ObjectId> {
+import UserRole from "../../../../domain/authentication/entity/user_role";
+export default interface IRoleRepository extends IBaseRepository<UserRole, Types.ObjectId> {
 }
+export declare const IIRoleRepository = "IRoleRepository";

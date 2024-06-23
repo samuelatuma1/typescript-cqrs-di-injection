@@ -26,7 +26,7 @@
 import { Model } from "mongoose";
 import IBaseRepository from "../../../../application/contract/data_access/common/base_repository";
 import BaseEntity from "../../../../domain/common/entity/base_entity";
-import { PaginationResponse } from "../../../../domain/common/dto/results/pagination_result";
+import { PaginationResponse } from "../../../../domain/authentication/dto/results/pagination_result";
 export declare class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBaseRepository<TEntity, TId> {
     protected _model: Model<TEntity>;
     constructor(model: Model<TEntity>);

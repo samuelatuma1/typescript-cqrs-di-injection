@@ -16,9 +16,11 @@ export default class EventTracer implements IEventTracer {
     private addMessageToTimeline;
     private getEventTracerObject;
     say(message: string): void;
+    resetTracer: () => void;
     isException: () => void;
-    isSuccess(): void;
+    isSuccess: () => void;
     isError(): void;
+    isSuccessWithResponseAndMessage: (response: any, message?: string) => void;
     isExceptionWithMessage(message: string): void;
     isSuccessWithMessage(message: string): void;
     isErrorWithMessage(message: string): void;

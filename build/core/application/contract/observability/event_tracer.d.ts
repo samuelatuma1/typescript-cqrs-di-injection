@@ -7,6 +7,7 @@ export default interface IEventTracer {
     isError(): void;
     isExceptionWithMessage(message: string): void;
     isSuccessWithMessage(message: string): void;
+    isSuccessWithResponseAndMessage(response: any, message?: string): void;
     isErrorWithMessage(message: string): void;
 }
 export declare const IIEventTracer = "IEventTracer";

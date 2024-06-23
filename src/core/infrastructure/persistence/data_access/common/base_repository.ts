@@ -3,7 +3,7 @@ import IBaseRepository from "../../../../application/contract/data_access/common
 import BaseEntity from "../../../../domain/common/entity/base_entity";
 import { RecordStatus } from "../../../../domain/common/enum/record_status";
 import DateUtility from "../../../../application/common/utilities/date_utility";
-import { PaginationResponse } from "../../../../domain/common/dto/results/pagination_result";
+import { PaginationResponse } from "../../../../domain/authentication/dto/results/pagination_result";
 
 
 export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBaseRepository<TEntity,  TId>{
@@ -32,20 +32,45 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
     }
 
 
-    getByIdAsync = async (id: TId): Promise<TEntity | null> => {
-        return await this._model.findById(id);
+    getByIdAsync = async (id: TId, joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity | null> => {
+
+        let dbQuery = this._model.findById(id);
+        if(joins){
+            for(let key in joins){
+                if(joins[key]){
+                    dbQuery.populate(key)
+                }
+            }
+        }
+        return await dbQuery;
     }
-    getAsync = async (query: Partial<{[k in keyof TEntity]: any}> = {}): Promise<TEntity[]> => {
+    getAsync = async (query: Partial<{[k in keyof TEntity]: any}> = {}, joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity[]> => {
         if(!query.hasOwnProperty('recordStatus')){
             query.recordStatus = { "$ne": RecordStatus.DELETED };
         }
-        return await this._model.find(query);
+        let dbQuery = this._model.find(query);
+        if(joins){
+            for(let key in joins){
+                if(joins[key]){
+                    dbQuery.populate(key)
+                }
+            }
+        }
+        return await dbQuery;
     }
-    firstOrDefaultAsync = async (query: Partial<{[k in keyof TEntity]: any}> = {}): Promise<TEntity | null> => {
+    firstOrDefaultAsync = async (query: Partial<{[k in keyof TEntity]: any}> = {}, joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity | null> => {
         if(!query.hasOwnProperty('recordStatus')){
             query.recordStatus = { "$ne": RecordStatus.DELETED };
         }
-        const entity = await this._model.findOne(query);
+        let dbQuery = this._model.findOne(query);
+        if(joins){
+            for(let key in joins){
+                if(joins[key]){
+                    dbQuery.populate(key)
+                }
+            }
+        }
+        const entity = await dbQuery;
         return entity ?? null;
     } 
 
@@ -137,4 +162,11 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
         return await this._model.findOne(query) ?? null;
     }
     
+    contains = async (query: Partial<{[k in keyof TEntity]: any[]}>): Promise<TEntity[]> => {
+        let actualQuery: Partial<{[k in keyof TEntity]: {[key: string]: any[]}}> = {};
+        for(let key in query){
+            actualQuery[key] = {"$in": query[key]}
+        }
+        return await this.getAsync(actualQuery);
+    }
 }

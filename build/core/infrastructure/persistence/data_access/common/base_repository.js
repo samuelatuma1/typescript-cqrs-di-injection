@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseRepository = void 0;
 const record_status_1 = require("../../../../domain/common/enum/record_status");
 const date_utility_1 = __importDefault(require("../../../../application/common/utilities/date_utility"));
-const pagination_result_1 = require("../../../../domain/common/dto/results/pagination_result");
+const pagination_result_1 = require("../../../../domain/authentication/dto/results/pagination_result");
 class BaseRepository {
     _model;
     constructor(model) {
