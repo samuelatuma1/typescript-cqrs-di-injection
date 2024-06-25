@@ -462,28 +462,79 @@ var CategoryService = /** @class */ (function () {
                 }
             });
         }); };
-        this.getCategoriesWithInheritedFilters = function (categoryIds) { return __awaiter(_this, void 0, Promise, function () {
-            var categories;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.categoryRepository.contains({ _id: categoryIds.map(function (id) { return new mongoose_1.Types.ObjectId(id); }) })];
+        this.getCategoriesByIds = function (categoryIds, includeInheritedFilters) {
+            if (includeInheritedFilters === void 0) { includeInheritedFilters = false; }
+            return __awaiter(_this, void 0, Promise, function () {
+                var categories;
+                var _this = this;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.categoryRepository.contains({ _id: categoryIds.map(function (id) { return new mongoose_1.Types.ObjectId(id); }) })];
+                        case 1:
+                            categories = _a.sent();
+                            if (includeInheritedFilters) {
+                                categories.forEach(function (category) { return __awaiter(_this, void 0, void 0, function () {
+                                    var _a;
+                                    return __generator(this, function (_b) {
+                                        switch (_b.label) {
+                                            case 0:
+                                                _a = category;
+                                                return [4 /*yield*/, this.getAllFiltersForCategoryIncludingParentsAsList(category)];
+                                            case 1:
+                                                _a.filters = _b.sent();
+                                                return [2 /*return*/];
+                                        }
+                                    });
+                                }); });
+                            }
+                            return [2 /*return*/, categories];
+                    }
+                });
+            });
+        };
+        this.getCategoryEnriched = function (categoryId, joins) { return __awaiter(_this, void 0, Promise, function () {
+            var includes, savedCategory, _a, _b, ex_5;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        _c.trys.push([0, 6, , 7]);
+                        this.eventTracer.say("Get Category for: " + categoryId);
+                        this.eventTracer.say("Include fields " + joins);
+                        includes = {};
+                        if (joins.hasOwnProperty('parentCategory')) {
+                            this.eventTracer.say('Including Parent Categories');
+                            includes.parentCategory = true;
+                        }
+                        return [4 /*yield*/, this.categoryRepository.getByIdAsync(new mongoose_1.Types.ObjectId(categoryId), includes)];
                     case 1:
-                        categories = _a.sent();
-                        categories.forEach(function (category) { return __awaiter(_this, void 0, void 0, function () {
-                            var _a;
-                            return __generator(this, function (_b) {
-                                switch (_b.label) {
-                                    case 0:
-                                        _a = category;
-                                        return [4 /*yield*/, this.getAllFiltersForCategoryIncludingParentsAsList(category)];
-                                    case 1:
-                                        _a.filters = _b.sent();
-                                        return [2 /*return*/];
-                                }
-                            });
-                        }); });
-                        return [2 /*return*/, categories];
+                        savedCategory = _c.sent();
+                        if (!savedCategory) {
+                            throw new not_found_exception_1["default"]("Category with id " + categoryId + " not found");
+                        }
+                        if (!joins.hasOwnProperty('subCategories')) return [3 /*break*/, 3];
+                        this.eventTracer.say('Including SubCategories');
+                        _a = savedCategory;
+                        return [4 /*yield*/, this.categoryRepository.getAsync({ parentCategory: savedCategory._id })];
+                    case 2:
+                        _a.subCategories = _c.sent();
+                        console.log({ subCat: savedCategory.subCategories });
+                        _c.label = 3;
+                    case 3:
+                        if (!joins.hasOwnProperty('filters')) return [3 /*break*/, 5];
+                        this.eventTracer.say('Including Parent filters');
+                        _b = savedCategory;
+                        return [4 /*yield*/, this.getAllFiltersForCategoryIncludingParentsAsList(savedCategory)];
+                    case 4:
+                        _b.filters = _c.sent();
+                        _c.label = 5;
+                    case 5:
+                        this.eventTracer.isSuccessWithResponseAndMessage(savedCategory);
+                        return [2 /*return*/, savedCategory];
+                    case 6:
+                        ex_5 = _c.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_5);
+                        throw ex_5;
+                    case 7: return [2 /*return*/];
                 }
             });
         }); };

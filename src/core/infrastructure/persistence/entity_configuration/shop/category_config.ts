@@ -2,6 +2,7 @@ import { model, Schema, Types } from "mongoose";
 import Category from "../../../../domain/shop/entity/category";
 import { FilterSchema } from "./filter_config";
 import { UploadFileSchema } from "../common/upload_file_config";
+import { ProductSchema } from "./product_config";
 
 var categorgySchema = new Schema<Category>({
     createdAt: { type: Date, required: true },
@@ -14,7 +15,8 @@ var categorgySchema = new Schema<Category>({
     img: {type: UploadFileSchema, default: null},
     parentCategory: {type: Types.ObjectId, ref: 'Category', default: null},
     filters: {type: [FilterSchema]},
-    // products: {type: []}
+    products: {type: [ProductSchema]},
+    subCategories: {type: []},
 });
 
 export const categoryModel  = model<Category>("Category", categorgySchema);

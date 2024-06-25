@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import BaseEntity from "../../common/entity/base_entity";
 import UploadFile from "../../common/model/upload_file";
 import { Filter } from "./filter";
+import Product from "./product";
 
 interface CategoryInit {
     name: string;
@@ -10,7 +11,7 @@ interface CategoryInit {
     img?: UploadFile;
     parentCategory?: Types.ObjectId | null | string;
     filters?: Filter[];
-    products?: object[]; //TODO: Replace with actual product
+    products?: Product[]; //TODO: Replace with actual product
 }
 
 export default class Category extends BaseEntity<Types.ObjectId>{
@@ -19,8 +20,9 @@ export default class Category extends BaseEntity<Types.ObjectId>{
     desc: string = "";
     img: UploadFile | null;
     parentCategory: Types.ObjectId | Category | null = null;
+    subCategories: Category[] = [];
     filters: Filter[];
-    products: object[]; //TODO: Replace with actual product
+    products: Product[]; //TODO: Replace with actual product
 
     constructor(init: CategoryInit);
     public constructor(init: CategoryInit){
@@ -33,6 +35,6 @@ export default class Category extends BaseEntity<Types.ObjectId>{
         this.parentCategory = init.parentCategory ? new Types.ObjectId(init.parentCategory) : null;
         this.filters = init.filters ?? [];
         this.products = init.products ?? [];
-        
+        this.subCategories = [];
     }
 }

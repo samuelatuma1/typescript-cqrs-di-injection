@@ -62,6 +62,7 @@ var product_service_1 = require("../../core/application/contract/services/shop/p
 var tsyringe_1 = require("tsyringe");
 var base_controller_1 = require("./base_controller");
 var serialization_utility_1 = require("../../core/application/common/utilities/serialization_utility");
+var mongoose_1 = require("mongoose");
 var ProductController = /** @class */ (function (_super) {
     __extends(ProductController, _super);
     function ProductController(productService) {
@@ -77,7 +78,6 @@ var ProductController = /** @class */ (function (_super) {
                         reqBody = serialization_utility_1["default"].deserializeJson(req.body.data);
                         reqBody.mainImg = (_a = this.convertReqFilesToUploadFiles(req, "mainImg")[0]) !== null && _a !== void 0 ? _a : null;
                         reqBody.otherMedia = this.convertReqFilesToUploadFiles(req, "otherMedia");
-                        console.log({ body: reqBody, mainImg: reqBody.mainImg, otherMedia: reqBody.otherMedia });
                         return [4 /*yield*/, this.productService.createProduct(reqBody)];
                     case 1:
                         createdProduct = _b.sent();
@@ -85,6 +85,44 @@ var ProductController = /** @class */ (function (_super) {
                     case 2:
                         ex_1 = _b.sent();
                         next(ex_1);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.updateProduct = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var productId, updatedProduct, ex_2;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        productId = new mongoose_1.Types.ObjectId(req.params.productId);
+                        return [4 /*yield*/, this.productService.updateProduct(productId, req.body)];
+                    case 1:
+                        updatedProduct = _a.sent();
+                        return [2 /*return*/, res.json(updatedProduct)];
+                    case 2:
+                        ex_2 = _a.sent();
+                        next(ex_2);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.getProduct = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var productId, product, ex_3;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        productId = new mongoose_1.Types.ObjectId(req.params.productId);
+                        return [4 /*yield*/, this.productService.getProduct(productId)];
+                    case 1:
+                        product = _a.sent();
+                        return [2 /*return*/, res.json(product)];
+                    case 2:
+                        ex_3 = _a.sent();
+                        next(ex_3);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }

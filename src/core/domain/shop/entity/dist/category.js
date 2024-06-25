@@ -24,6 +24,7 @@ var Category = /** @class */ (function (_super) {
         _this = _super.call(this, id) || this;
         _this.desc = "";
         _this.parentCategory = null;
+        _this.subCategories = [];
         _this.name = init.name;
         _this.urlName = init.urlName;
         _this.desc = (_a = init.desc) !== null && _a !== void 0 ? _a : '';
@@ -31,6 +32,7 @@ var Category = /** @class */ (function (_super) {
         _this.parentCategory = init.parentCategory ? new mongoose_1.Types.ObjectId(init.parentCategory) : null;
         _this.filters = (_c = init.filters) !== null && _c !== void 0 ? _c : [];
         _this.products = (_d = init.products) !== null && _d !== void 0 ? _d : [];
+        _this.subCategories = [];
         return _this;
     }
     return Category;

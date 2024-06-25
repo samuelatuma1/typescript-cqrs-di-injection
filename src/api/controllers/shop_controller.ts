@@ -5,11 +5,15 @@ import SerializationUtility from "../../core/application/common/utilities/serial
 import { CreateCategoryRequest, CreateFilterRequest, UpdateFilterRequest } from "../../core/domain/shop/dto/requests/category_requests";
 import ICategoryService, { IICategoryService } from "../../core/application/contract/services/shop/category_service";
 import { Types } from "mongoose";
+import IProductService, { IIProductService } from "../../core/application/contract/services/shop/product_service";
 
 @injectable()
 export default class ShopController extends BaseController{
 
-  constructor(@inject(IICategoryService) private categoryService: ICategoryService) {
+  constructor(
+    @inject(IICategoryService) private categoryService: ICategoryService,
+    @inject(IIProductService) private readonly productService: IProductService
+  ) {
     super();
   }
 
@@ -56,6 +60,18 @@ export default class ShopController extends BaseController{
       let categoryId = new Types.ObjectId(req.params.categoryId);
       const categoryWithUpdatedFilter = await this.categoryService.updateFilter(categoryId, req.body);
       return res.json(categoryWithUpdatedFilter);
+    }
+    catch(ex){
+        next(ex)
+    }
+  }
+
+  getCategory =  async (req: Request<{categoryId: string}>, res: Response, next: NextFunction) => {
+    try{
+      let categoryId = new Types.ObjectId(req.params.categoryId);
+      let filters = req.query as { [key: string]: string };
+      const enrichedCategory = await this.productService.getCategoryEnriched(categoryId, filters);
+      return res.json(enrichedCategory);
     }
     catch(ex){
         next(ex)

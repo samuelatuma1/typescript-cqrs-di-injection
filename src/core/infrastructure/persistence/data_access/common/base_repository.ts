@@ -33,7 +33,6 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
 
 
     getByIdAsync = async (id: TId, joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity | null> => {
-
         let dbQuery = this._model.findById(id);
         if(joins){
             for(let key in joins){

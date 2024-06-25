@@ -286,11 +286,44 @@ export default class CategoryService implements ICategoryService{
         }
     }
    
-    public getCategoriesWithInheritedFilters = async (categoryIds: string[] | Types.ObjectId[]): Promise<Category[]> => {
+    public getCategoriesByIds = async (categoryIds: string[] | Types.ObjectId[], includeInheritedFilters: boolean = false): Promise<Category[]> => {
         let categories = await this.categoryRepository.contains({_id: categoryIds.map(id => new Types.ObjectId(id))});
-        categories.forEach(async (category) => {
-            category.filters =  await this.getAllFiltersForCategoryIncludingParentsAsList(category);
-        })
+        if(includeInheritedFilters){
+            categories.forEach(async (category) => {
+                category.filters =  await this.getAllFiltersForCategoryIncludingParentsAsList(category);
+            })
+        }
         return categories;
+    }
+
+    public getCategoryEnriched = async (categoryId: Types.ObjectId | string, joins: Partial<{[k in keyof Category]: boolean}>): Promise<Category> => {
+        try{
+            this.eventTracer.say(`Get Category for: ${categoryId}`);
+            this.eventTracer.say(`Include fields ${joins}`);
+            let includes: Partial<{[k in keyof Category]: boolean}> = {};
+            if(joins.hasOwnProperty('parentCategory')){
+                this.eventTracer.say('Including Parent Categories')
+                includes.parentCategory = true;
+            }
+            let savedCategory = await this.categoryRepository.getByIdAsync(new Types.ObjectId(categoryId), includes);
+            if(!savedCategory){
+                throw new NotFoundException(`Category with id ${categoryId} not found`); 
+            }
+            if(joins.hasOwnProperty('subCategories')){
+                this.eventTracer.say('Including SubCategories')
+                savedCategory.subCategories = await this.categoryRepository.getAsync({parentCategory: savedCategory._id})
+                console.log({subCat: savedCategory.subCategories})
+            }
+            if(joins.hasOwnProperty('filters')){
+                this.eventTracer.say('Including Parent filters')
+                savedCategory.filters = await this.getAllFiltersForCategoryIncludingParentsAsList(savedCategory)
+            }
+            this.eventTracer.isSuccessWithResponseAndMessage(savedCategory);
+            return savedCategory;
+        }   
+        catch(ex){
+            this.eventTracer.isExceptionWithMessage(`${ex}`);
+            throw ex;
+        }
     }
 }

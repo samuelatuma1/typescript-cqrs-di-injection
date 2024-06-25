@@ -63,11 +63,13 @@ var base_controller_1 = require("./base_controller");
 var serialization_utility_1 = require("../../core/application/common/utilities/serialization_utility");
 var category_service_1 = require("../../core/application/contract/services/shop/category_service");
 var mongoose_1 = require("mongoose");
+var product_service_1 = require("../../core/application/contract/services/shop/product_service");
 var ShopController = /** @class */ (function (_super) {
     __extends(ShopController, _super);
-    function ShopController(categoryService) {
+    function ShopController(categoryService, productService) {
         var _this = _super.call(this) || this;
         _this.categoryService = categoryService;
+        _this.productService = productService;
         _this.createCategory = function (req, res, next) { return __awaiter(_this, void 0, Promise, function () {
             var data, categoryDTO, createdCategory, ex_1;
             return __generator(this, function (_a) {
@@ -150,11 +152,32 @@ var ShopController = /** @class */ (function (_super) {
                 }
             });
         }); };
+        _this.getCategory = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var categoryId, filters, enrichedCategory, ex_5;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        categoryId = new mongoose_1.Types.ObjectId(req.params.categoryId);
+                        filters = req.query;
+                        return [4 /*yield*/, this.productService.getCategoryEnriched(categoryId, filters)];
+                    case 1:
+                        enrichedCategory = _a.sent();
+                        return [2 /*return*/, res.json(enrichedCategory)];
+                    case 2:
+                        ex_5 = _a.sent();
+                        next(ex_5);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
         return _this;
     }
     ShopController = __decorate([
         tsyringe_1.injectable(),
-        __param(0, tsyringe_1.inject(category_service_1.IICategoryService))
+        __param(0, tsyringe_1.inject(category_service_1.IICategoryService)),
+        __param(1, tsyringe_1.inject(product_service_1.IIProductService))
     ], ShopController);
     return ShopController;
 }(base_controller_1["default"]));

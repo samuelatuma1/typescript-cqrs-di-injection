@@ -7,7 +7,8 @@ export default interface ICategoryService {
     addFiltersToCategory (categoryId: Types.ObjectId, filtersRequest: CreateFilterRequest[]): Promise<Category>
     deleteFilters(categoryId: Types.ObjectId, filterIds: Types.ObjectId[]): Promise<Category>
     updateFilter (categoryId: Types.ObjectId, updateFilter: UpdateFilterRequest) : Promise<Category>
-    getCategoriesWithInheritedFilters(categoryIds: string[] | Types.ObjectId[]): Promise<Category[]> 
+    getCategoriesByIds(categoryIds: string[] | Types.ObjectId[], includeInheritedFilters?: boolean): Promise<Category[]> 
+    getCategoryEnriched (categoryId: Types.ObjectId | string, joins: Partial<{[k in keyof Category]: boolean}>): Promise<Category>
 }
 
 export const IICategoryService = 'ICategoryService';

@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.CreateProductRequest = exports.CreateFilterForProduct = void 0;
+exports.UpdateProductRequest = exports.CreateProductRequest = exports.CreateFilterForProduct = void 0;
 var currency_1 = require("../../../../domain/common/enum/currency");
 var CreateFilterForProduct = /** @class */ (function () {
     function CreateFilterForProduct() {
@@ -33,3 +33,11 @@ var CreateProductRequest = /** @class */ (function () {
     return CreateProductRequest;
 }());
 exports.CreateProductRequest = CreateProductRequest;
+var UpdateProductRequest = /** @class */ (function () {
+    function UpdateProductRequest() {
+        this.price = 0;
+        this.currency = currency_1.Currency.NGN;
+    }
+    return UpdateProductRequest;
+}());
+exports.UpdateProductRequest = UpdateProductRequest;

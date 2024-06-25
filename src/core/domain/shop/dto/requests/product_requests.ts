@@ -9,7 +9,7 @@ export class CreateFilterForProduct {
     values: string[];
     filterId: Types.ObjectId | string;
 }
-interface CreateProductRequestInit {
+export interface CreateProductRequestInit {
      name : string;
      desc?: string;
     mainImg?: UploadFile | null;
@@ -45,4 +45,17 @@ export class CreateProductRequest {
         this.categories = init?.categories ?? [];
         this.extras = init?.extras ?? []
     }
+}
+
+export class UpdateProductRequest {
+    public name?: string;
+    public desc?: string;
+    // public mainImg?: UploadFile;
+    // public otherMedia?: UploadFile[];
+    public inventory?: ProductInventory;
+    public price?: number = 0;
+    public currency?: Currency | string = Currency.NGN;
+    public filters?: {[key: string]: CreateFilterForProduct};
+    public categories?: string[] | Types.ObjectId[];
+    public extras?: ProductExtra[];
 }

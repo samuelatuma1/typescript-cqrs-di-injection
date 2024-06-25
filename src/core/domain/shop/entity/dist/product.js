@@ -15,6 +15,18 @@ var __extends = (this && this.__extends) || (function () {
 exports.__esModule = true;
 var mongoose_1 = require("mongoose");
 var base_entity_1 = require("../../../domain/common/entity/base_entity");
+var Variant = /** @class */ (function () {
+    function Variant() {
+        this.desc = "";
+        this.mainImg = null;
+        this.otherMedia = [];
+        this.price = 0;
+        this.currency = "";
+        this.filters = new Map(); // key is the filterId as string
+        this.reviews = [];
+    }
+    return Variant;
+}());
 var Product = /** @class */ (function (_super) {
     __extends(Product, _super);
     function Product(init) {
@@ -23,6 +35,7 @@ var Product = /** @class */ (function (_super) {
         var id = new mongoose_1.Types.ObjectId();
         _this = _super.call(this, id) || this;
         _this.reviews = [];
+        _this.variants = [];
         _this.name = init.name;
         _this.desc = (_a = init.desc) !== null && _a !== void 0 ? _a : "";
         _this.mainImg = (_b = init.mainImg) !== null && _b !== void 0 ? _b : null;
