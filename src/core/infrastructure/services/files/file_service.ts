@@ -72,6 +72,9 @@ export default class CloudinaryService implements IFileService{
 
     deleteFile= async (publicId: string): Promise<void> => {
         try{
+            if(!publicId){
+                return null;
+            }
             this.eventTracer.say(`"Deleting file with public id ${publicId}`)
             
             const response = await cloudinary.uploader.destroy(publicId)

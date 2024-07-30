@@ -24,6 +24,8 @@ export default interface IUserService {
     assignRolesToUser(userId: Types.ObjectId, roles: string[]): Promise<User | null>
 
     getUserWithAllPermissions(userId: Types.ObjectId): Promise<User | null>
+
+    getUserByEmail(email: string): Promise<User | null>;
 }
 
 export const IIUserService = "IUserService";

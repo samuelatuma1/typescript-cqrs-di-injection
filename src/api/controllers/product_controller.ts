@@ -45,7 +45,7 @@ export default class ProductController extends BaseController {
     public getProduct = async (req: Request<{productId: Types.ObjectId | string}>, res: Response, next: NextFunction) => {
         try{
             let productId = new Types.ObjectId(req.params.productId);
-            
+           
             let product = await this.productService.getProduct(productId);
             return res.json(product);
         }
@@ -53,4 +53,17 @@ export default class ProductController extends BaseController {
             next(ex)
         }
     }
+
+    public specialOffers = async (req: Request<{offerId: Types.ObjectId }>, res: Response, next: NextFunction) => {
+        try{
+            let offerId = new Types.ObjectId(req.params.offerId);
+           
+            let product = await this.productService.getProductsWithSpecialOffer(offerId);
+            return res.json(product);
+        }
+        catch(ex){
+            next(ex)
+        }
+    }
+
 }

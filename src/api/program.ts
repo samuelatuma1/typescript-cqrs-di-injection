@@ -24,6 +24,32 @@ import { IIProductRepository } from "../core/application/contract/data_access/sh
 import ProductRepository from "../core/infrastructure/persistence/data_access/shop/product_repository";
 import { IIProductService } from "../core/application/contract/services/shop/product_service";
 import ProductService from '../core/application/services/shop/product_service';
+import { IIDiscountRepository } from '../core/application/contract/data_access/shop/discount_repository';
+import DiscountRepository from '../core/infrastructure/persistence/data_access/shop/discount_repository';
+import { IIDiscountService } from '../core/application/contract/services/shop/discount_service';
+import DiscountService from '../core/application/services/shop/discount_service';
+import { IIOrderService } from '../core/application/contract/services/shop/order_service';
+import OrderService from '../core/application/services/shop/order_service';
+import { IICartRepository } from '../core/application/contract/data_access/shop/cart_repository';
+import CartRepository from '../core/infrastructure/persistence/data_access/shop/cart_repository';
+import { IIAddressRepository } from '../core/application/contract/data_access/authentication/address_repository';
+import AddressRepository from '../core/infrastructure/persistence/data_access/authentication/address_reposiotry';
+import { IICityRepository } from '../core/application/contract/data_access/authentication/city_repository';
+import CityRepository from '../core/infrastructure/persistence/data_access/authentication/city_repository';
+import { IIStateRepository } from '../core/application/contract/data_access/authentication/state_repository';
+import StateRepository from '../core/infrastructure/persistence/data_access/authentication/state_repository';
+import { IIAddressService } from '../core/application/contract/services/authentication/address_service';
+import AddressService from '../core/application/services/authentication/address_service';
+import { IICountryRepository } from '../core/application/contract/data_access/authentication/country_repository';
+import CountryRepository from '../core/infrastructure/persistence/data_access/authentication/country_repository';
+import { IIOrderRepository } from '../core/application/contract/data_access/shop/order_repository';
+import OrderRepository from '../core/infrastructure/persistence/data_access/shop/order_repository';
+import { IIBillboardRepository } from '../core/application/contract/data_access/shop/billboard_repository';
+import BillboardRepository from '../core/infrastructure/persistence/data_access/shop/billboard_repository';
+import { IIBillboardService } from '../core/application/contract/services/shop/billboard_service';
+import BillboardService from '../core/application/services/shop/billboard_service';
+import { IISpecialOfferRepository } from '../core/application/contract/data_access/shop/special_offer_repository';
+import SpecialOfferRepository from '../core/infrastructure/persistence/data_access/shop/special_offer_repository';
 
 dotenv.config();
 
@@ -68,6 +94,38 @@ container.register(IIProductRepository, {
   useClass: ProductRepository
 })
 
+container.register(IIDiscountRepository, {
+  useClass: DiscountRepository
+})
+
+container.register(IICartRepository, {
+  useClass: CartRepository
+})
+
+container.register(IIOrderRepository, {
+  useClass: OrderRepository
+})
+
+container.register(IIStateRepository, {
+  useClass: StateRepository
+})
+container.register(IICityRepository, {
+  useClass: CityRepository
+})
+container.register(IIAddressRepository, {
+  useClass: AddressRepository
+})
+container.register(IICountryRepository, {
+  useClass: CountryRepository
+})
+container.register(IIBillboardRepository, {
+  useClass: BillboardRepository
+})
+
+container.register(IISpecialOfferRepository, {
+  useClass: SpecialOfferRepository
+})
+
 container.register(IICategoryService, {
   useClass: CategoryService
 })
@@ -75,6 +133,23 @@ container.register(IICategoryService, {
 container.register(IIProductService, {
   useClass: ProductService
 })
+
+container.register(IIDiscountService, {
+   useClass: DiscountService
+})
+
+container.register(IIOrderService, {
+  useClass: OrderService
+})
+
+container.register(IIAddressService, {
+  useClass: AddressService
+})
+
+container.register(IIBillboardService, {
+  useClass: BillboardService
+})
+
 container.register(IIServiceConfig, {
   useValue: serviceConfig
 })
@@ -86,5 +161,6 @@ container.register(IICloudinaryConfig, {
 container.register(IIFileService, {
   useClass: CloudinaryService
 })
+
 
 export {container as iocContainer}

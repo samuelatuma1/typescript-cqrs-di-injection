@@ -1,5 +1,5 @@
 import Product from "../../../../domain/shop/entity/product";
-import { model, Schema, Types } from "mongoose";
+import { model, Schema } from "mongoose";
 import { UploadFileSchema } from "../common/upload_file_config";
 import { ProductInventory } from "../../../../domain/shop/entity/product_inventory";
 import FilterForProduct from "../../../../domain/shop/entity/filter_for_product";
@@ -23,6 +23,10 @@ const ExtraSchema = new Schema<ProductExtra>({
     body: {type: String}
 })
 export const ProductSchema = new Schema<Product>({
+    createdAt: {type: Date},
+    updatedAt: {type: Date},
+    recordStatus: {type: String},
+    
     name: {type: String, required: true},
     desc: {type: String, default: ""},
     mainImg: {type: UploadFileSchema, default: null},
@@ -33,7 +37,9 @@ export const ProductSchema = new Schema<Product>({
     filters: {type: Map, of: FilterForProductSchema},
 
     categories: {type: [Schema.Types.ObjectId], ref: 'Category'},
-    extras: {type: [ExtraSchema]}
+    extras: {type: [ExtraSchema]},
+
+    discounts: {type: [Schema.Types.ObjectId], ref: 'Discount'}
 });
 
 export const productModel = model<Product>('Product', ProductSchema);

@@ -1,8 +1,9 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Mongoose, Schema, Types } from "mongoose";
 import Category from "../../../../domain/shop/entity/category";
 import { FilterSchema } from "./filter_config";
 import { UploadFileSchema } from "../common/upload_file_config";
 import { ProductSchema } from "./product_config";
+
 
 var categorgySchema = new Schema<Category>({
     createdAt: { type: Date, required: true },
@@ -17,6 +18,7 @@ var categorgySchema = new Schema<Category>({
     filters: {type: [FilterSchema]},
     products: {type: [ProductSchema]},
     subCategories: {type: []},
+    pagedProducts: {type: Schema.Types.Mixed}
 });
 
 export const categoryModel  = model<Category>("Category", categorgySchema);

@@ -69,6 +69,9 @@ var BaseRepository = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         entitiesToSave = entities.map(this.convertToEntity);
+                        if (!entitiesToSave.length) {
+                            return [2 /*return*/, []];
+                        }
                         return [4 /*yield*/, this._model.insertMany(entitiesToSave)];
                     case 1:
                         _a.sent();
@@ -299,7 +302,7 @@ var BaseRepository = /** @class */ (function () {
                 }
             });
         }); };
-        this.contains = function (query) { return __awaiter(_this, void 0, Promise, function () {
+        this.contains = function (query, joins) { return __awaiter(_this, void 0, Promise, function () {
             var actualQuery, key;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -308,7 +311,25 @@ var BaseRepository = /** @class */ (function () {
                         for (key in query) {
                             actualQuery[key] = { "$in": query[key] };
                         }
-                        return [4 /*yield*/, this.getAsync(actualQuery)];
+                        return [4 /*yield*/, this.getAsync(actualQuery, joins)];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
+            });
+        }); };
+        this.or = function (queries, joins) { return __awaiter(_this, void 0, Promise, function () {
+            var dbQuery, key;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        dbQuery = this._model.find({ $or: queries });
+                        if (joins) {
+                            for (key in joins) {
+                                if (joins[key]) {
+                                    dbQuery.populate(key);
+                                }
+                            }
+                        }
+                        return [4 /*yield*/, dbQuery];
                     case 1: return [2 /*return*/, _a.sent()];
                 }
             });

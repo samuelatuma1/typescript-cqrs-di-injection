@@ -12,6 +12,8 @@ import UploadFile from "./core/domain/common/model/upload_file";
 import { upload } from "./api/middlewares/multer_upload";
 import shopRoute from "./api/routes/shop_route";
 import productRoute from "./api/routes/product_route";
+import saveCitiesCountriesStates from "./migrations/0001_save_cities";
+import fetch from "node-fetch";
 
 // Create a Multer instance with a destination folder for file uploads
 
@@ -51,6 +53,11 @@ app.post("/test-image", upload.single('file'), async (req: Request, res: Respons
   let uploadedImage = await testCloudinary.uploadFile(new UploadFile("", req.file.path))
   res.json({ uploadedImage });
 });
+
+
+// MIGRATIONS // PLEASE UNCOMMENT SESSION
+// saveCitiesCountriesStates()
+
 
 app.use("/auth", authenticationRoute);
 app.use("/shop", shopRoute);

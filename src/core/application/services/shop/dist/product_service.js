@@ -44,6 +44,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
 exports.__esModule = true;
 var product_requests_1 = require("../../../domain/shop/dto/requests/product_requests");
 var tsyringe_1 = require("tsyringe");
@@ -57,23 +64,28 @@ var product_inventory_1 = require("../../../domain/shop/entity/product_inventory
 var product_repository_1 = require("../../../application/contract/data_access/shop/product_repository");
 var file_service_1 = require("../../../application/contract/services/files/file_service");
 var not_found_exception_1 = require("../../../application/common/exceptions/not_found_exception");
-var product_response_1 = require("../../..//domain/shop/dto/responses/product_response");
+var product_response_1 = require("../../../domain/shop/dto/responses/product_response");
+var pagination_utility_1 = require("../../../application/common/utilities/pagination_utility");
+var discount_service_1 = require("../../../application/contract/services/shop/discount_service");
+var discount_1 = require("../../../domain/shop/entity/discount");
+var date_utility_1 = require("../../../application/common/utilities/date_utility");
 var ProductService = /** @class */ (function () {
-    function ProductService(eventTracer, categoryService, productRepository, fileService) {
+    function ProductService(eventTracer, categoryService, productRepository, discountService, fileService) {
         var _this = this;
         this.eventTracer = eventTracer;
         this.categoryService = categoryService;
         this.productRepository = productRepository;
+        this.discountService = discountService;
         this.fileService = fileService;
         this.ProductMainImageFolder = "BEAUTY_PRODUCT_MAIN";
         this.ProductOtherMediaFolder = "BEAUTY_PRODUCT_OTHERS";
-        this.getProductByIdOrRaiseException = function (productId) { return __awaiter(_this, void 0, Promise, function () {
+        this.getProductByIdOrRaiseException = function (productId, joins) { return __awaiter(_this, void 0, Promise, function () {
             var product;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         productId = new mongoose_1.Types.ObjectId(productId);
-                        return [4 /*yield*/, this.productRepository.getByIdAsync(productId)];
+                        return [4 /*yield*/, this.productRepository.getByIdAsync(productId, joins)];
                     case 1:
                         product = _a.sent();
                         if (!product)
@@ -268,32 +280,67 @@ var ProductService = /** @class */ (function () {
             });
         }); };
         this.convertProductToProductResponse = function (product) {
-            return new product_response_1.ProductResponse(product);
+            var productResponse = new product_response_1.ProductResponse(product);
+            productResponse._id = product._id;
+            return productResponse;
+        };
+        this.convertProductsToProductResponse = function (products, includeDiscountAndDiscountPrice) {
+            if (includeDiscountAndDiscountPrice === void 0) { includeDiscountAndDiscountPrice = false; }
+            return __awaiter(_this, void 0, Promise, function () {
+                var productsResponses, _i, products_1, product, productResponse;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            productsResponses = [];
+                            _i = 0, products_1 = products;
+                            _a.label = 1;
+                        case 1:
+                            if (!(_i < products_1.length)) return [3 /*break*/, 5];
+                            product = products_1[_i];
+                            productResponse = this.convertProductToProductResponse(product);
+                            if (!includeDiscountAndDiscountPrice) return [3 /*break*/, 3];
+                            console.log({ product: product });
+                            return [4 /*yield*/, this.getDiscountedPriceAndAppliedDiscountsForProduct(productResponse)];
+                        case 2:
+                            productResponse = _a.sent();
+                            _a.label = 3;
+                        case 3:
+                            productsResponses.push(productResponse);
+                            _a.label = 4;
+                        case 4:
+                            _i++;
+                            return [3 /*break*/, 1];
+                        case 5: return [2 /*return*/, productsResponses];
+                    }
+                });
+            });
         };
         this.getProduct = function (productId) { return __awaiter(_this, void 0, Promise, function () {
-            var product, allCategoriesFiltersDict, ex_3;
+            var productFromDb, product, allCategoriesFiltersDict, ex_3;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        _a.trys.push([0, 3, , 4]);
+                        _a.trys.push([0, 4, , 5]);
                         this.eventTracer.say("Getting product with id: " + productId);
-                        return [4 /*yield*/, this.getProductByIdOrRaiseException(productId)];
+                        return [4 /*yield*/, this.getProductByIdOrRaiseException(productId, { discounts: true })];
                     case 1:
-                        product = _a.sent();
-                        product = this.convertProductToProductResponse(product);
-                        return [4 /*yield*/, this.getAllCategoryFiltersForProduct(product.categories)];
+                        productFromDb = _a.sent();
+                        return [4 /*yield*/, this.convertProductsToProductResponse([productFromDb], true)];
                     case 2:
+                        product = (_a.sent())[0];
+                        return [4 /*yield*/, this.getAllCategoryFiltersForProduct(product.categories)];
+                    case 3:
                         allCategoriesFiltersDict = _a.sent();
                         this.eventTracer.say("Added all filters to product");
                         product.allFiltersForProduct = allCategoriesFiltersDict;
                         this.eventTracer.isSuccessWithResponseAndMessage(product);
                         console.log({ pF: product.allFiltersForProduct, product: product, isProductResponse: product instanceof product_response_1.ProductResponse });
                         return [2 /*return*/, product];
-                    case 3:
+                    case 4:
                         ex_3 = _a.sent();
                         this.eventTracer.isExceptionWithMessage("" + ex_3);
                         throw ex_3;
-                    case 4: return [2 /*return*/];
+                    case 5: return [2 /*return*/];
                 }
             });
         }); };
@@ -305,110 +352,326 @@ var ProductService = /** @class */ (function () {
             }
             return filterDict;
         };
-        this.getCategoryEnriched = function (categoryId, filters) { return __awaiter(_this, void 0, Promise, function () {
-            var category, cleanedFilters, _i, _a, _b, filterName, filterValuesAsString, filterValues, categoryFiltersAsDict_1, validSearchFiltersWithIdAsKey, validSearchFiltersIds, _loop_1, this_1, filter, allProductsWithCategoryId, productsMatchingFilters, _c, allProductsWithCategoryId_1, product, productMatchesAllFilters, _loop_2, this_2, filterId, state_1, ex_4;
-            var _d;
-            return __generator(this, function (_e) {
-                switch (_e.label) {
+        this.getCategoryEnriched = function (categoryId, filters, page, pageSize) {
+            if (page === void 0) { page = 0; }
+            if (pageSize === void 0) { pageSize = 10; }
+            return __awaiter(_this, void 0, Promise, function () {
+                var category, cleanedFilters, _i, _a, _b, filterName, filterValuesAsString, filterValues, categoryFiltersAsDict_1, validSearchFiltersWithIdAsKey, validSearchFiltersIds, _loop_1, this_1, filter, allProductsWithCategoryId, productsMatchingFilters, _c, allProductsWithCategoryId_1, product, productMatchesAllFilters, _loop_2, this_2, filterId, state_1, productsResponse, paginatedProducts, ex_4;
+                var _d;
+                return __generator(this, function (_e) {
+                    switch (_e.label) {
+                        case 0:
+                            _e.trys.push([0, 4, , 5]);
+                            // get category
+                            this.eventTracer.say("Get Category Product");
+                            return [4 /*yield*/, this.categoryService.getCategoryEnriched(categoryId, { subCategories: true, filters: true })];
+                        case 1:
+                            category = _e.sent();
+                            console.log({ category: category });
+                            cleanedFilters = {};
+                            this.eventTracer.say("Cleaning filters");
+                            for (_i = 0, _a = Object.entries(filters); _i < _a.length; _i++) {
+                                _b = _a[_i], filterName = _b[0], filterValuesAsString = _b[1];
+                                filterValues = filterValuesAsString.split(",");
+                                cleanedFilters[filterName] = filterValues;
+                            }
+                            categoryFiltersAsDict_1 = this.transformCategoryFiltersToDict(category.filters);
+                            validSearchFiltersWithIdAsKey = {};
+                            validSearchFiltersIds = new Set();
+                            // apply filter logic on product
+                            // get filters from category based on filter names , convert to filter id for easier search
+                            this.eventTracer.say("Getting valid filters ids");
+                            _loop_1 = function (filter) {
+                                this_1.eventTracer.say("DEBUG!:exploring " + filter + " found");
+                                var filterInCategory = category.filters.find(function (categoryFilter) {
+                                    console.log({ categoryFilter: categoryFilter, categoryFiltersAsDict: categoryFiltersAsDict_1 });
+                                    return categoryFilter.name.toLowerCase() === filter.toLowerCase() && categoryFiltersAsDict_1.hasOwnProperty(categoryFilter._id.toJSON());
+                                });
+                                if (filterInCategory) {
+                                    this_1.eventTracer.say("DEBUG!: " + filterInCategory.name);
+                                    validSearchFiltersWithIdAsKey[filterInCategory._id.toJSON()] = filterInCategory;
+                                    validSearchFiltersIds.add(filterInCategory._id.toJSON());
+                                }
+                            };
+                            this_1 = this;
+                            for (filter in filters) {
+                                _loop_1(filter);
+                            }
+                            this.eventTracer.say("Valid search filter ids gotten : " + validSearchFiltersIds);
+                            return [4 /*yield*/, this.productRepository.getAsync({
+                                    categories: category._id
+                                }, { discounts: true })];
+                        case 2:
+                            allProductsWithCategoryId = _e.sent();
+                            productsMatchingFilters = [];
+                            // apply filters
+                            if (!object_utility_1["default"].objectSize(validSearchFiltersWithIdAsKey)) { // if no valid filter then all products are valid searches
+                                this.eventTracer.say("All products are valid searches");
+                                productsMatchingFilters = allProductsWithCategoryId;
+                            }
+                            else {
+                                this.eventTracer.say("narrowing down products based on valid search filters");
+                                for (_c = 0, allProductsWithCategoryId_1 = allProductsWithCategoryId; _c < allProductsWithCategoryId_1.length; _c++) {
+                                    product = allProductsWithCategoryId_1[_c];
+                                    productMatchesAllFilters = true;
+                                    _loop_2 = function (filterId) {
+                                        var productFilterValue = product.filters.get(filterId);
+                                        if (!productFilterValue) {
+                                            productMatchesAllFilters = false;
+                                            this_2.eventTracer.say("DEBUG ONLY!!: Product does not have filter with name " + validSearchFiltersWithIdAsKey[filterId].name);
+                                            return "break";
+                                        }
+                                        // get category filter value as well as type
+                                        var filterDetailsFromCategory = categoryFiltersAsDict_1[filterId];
+                                        switch (filterDetailsFromCategory.filterType.toLowerCase()) { // get filter type 
+                                            case "string":
+                                            default:
+                                                var filterName = filterDetailsFromCategory.name; // full circle back to name LOL
+                                                var selectedSearchValuesForFilter_1 = cleanedFilters[filterName];
+                                                var productValuesForFilter = (_d = product.filters.get(filterId)) === null || _d === void 0 ? void 0 : _d.values;
+                                                var doesProductMatchFilter = productValuesForFilter === null || productValuesForFilter === void 0 ? void 0 : productValuesForFilter.some(function (productValue) { return selectedSearchValuesForFilter_1.includes(productValue); });
+                                                if (!doesProductMatchFilter) {
+                                                    this_2.eventTracer.say("DEBUG ONLY!!: Product does not have a valid value for filter with name " + validSearchFiltersWithIdAsKey[filterId].name + ", filter values " + selectedSearchValuesForFilter_1 + ", product values: " + productValuesForFilter);
+                                                    productMatchesAllFilters = false;
+                                                    break;
+                                                }
+                                        }
+                                    };
+                                    this_2 = this;
+                                    for (filterId in validSearchFiltersWithIdAsKey) {
+                                        state_1 = _loop_2(filterId);
+                                        if (state_1 === "break")
+                                            break;
+                                    }
+                                    if (productMatchesAllFilters) {
+                                        this.eventTracer.say("DEBUG: Product matches filters");
+                                        productsMatchingFilters.push(product);
+                                    }
+                                }
+                            }
+                            return [4 /*yield*/, this.convertProductsToProductResponse(productsMatchingFilters, true)];
+                        case 3:
+                            productsResponse = _e.sent();
+                            paginatedProducts = pagination_utility_1["default"].paginateData(productsResponse, page, pageSize);
+                            category.pagedProducts = paginatedProducts;
+                            this.eventTracer.isSuccessWithResponseAndMessage(category);
+                            return [2 /*return*/, category];
+                        case 4:
+                            ex_4 = _e.sent();
+                            this.eventTracer.isExceptionWithMessage("" + ex_4);
+                            throw ex_4;
+                        case 5: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        this.isValidDiscount = function (discount, productCurrency) {
+            var isValidDiscount = false;
+            var timeNow = date_utility_1["default"].getUTCNow();
+            var pastValidity = discount.validityStartDate > timeNow || discount.validityEndDate < timeNow;
+            var useageLimitExceeded = discount.usedCount > discount.useageLimit;
+            switch (discount.discountType) {
+                case discount_1.DiscountType.bogo:
+                    break;
+                case discount_1.DiscountType.fixed:
+                    var currencyMisMatch = productCurrency !== discount.currency;
+                    console.log({ pastValidity: pastValidity, useageLimitExceeded: useageLimitExceeded, currencyMisMatch: currencyMisMatch, productCurrency: productCurrency, discountCurrency: discount.currency });
+                    return !(currencyMisMatch || pastValidity || useageLimitExceeded);
+                case discount_1.DiscountType.percentage:
+                    return !(pastValidity || useageLimitExceeded);
+                default:
+                    break;
+            }
+            return isValidDiscount;
+        };
+        this.getActiveDiscount = function (product) { return __awaiter(_this, void 0, Promise, function () {
+            var discounts, cleanedDiscount, _i, discounts_1, discount, productDiscount, _a, cleanedDiscount_1, discount;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _e.trys.push([0, 3, , 4]);
-                        console.log({ filters: filters });
-                        // get category
-                        this.eventTracer.say("Get Category Product");
-                        return [4 /*yield*/, this.categoryService.getCategoryEnriched(categoryId, { subCategories: true, filters: true })];
+                        discounts = product.discounts;
+                        cleanedDiscount = [];
+                        _i = 0, discounts_1 = discounts;
+                        _b.label = 1;
                     case 1:
-                        category = _e.sent();
-                        console.log({ category: category });
-                        cleanedFilters = {};
-                        this.eventTracer.say("Cleaning filters");
-                        for (_i = 0, _a = Object.entries(filters); _i < _a.length; _i++) {
-                            _b = _a[_i], filterName = _b[0], filterValuesAsString = _b[1];
-                            filterValues = filterValuesAsString.split(",");
-                            cleanedFilters[filterName] = filterValues;
-                        }
-                        categoryFiltersAsDict_1 = this.transformCategoryFiltersToDict(category.filters);
-                        validSearchFiltersWithIdAsKey = {};
-                        validSearchFiltersIds = new Set();
-                        // apply filter logic on product
-                        // get filters from category based on filter names , convert to filter id for easier search
-                        this.eventTracer.say("Getting valid filters ids");
-                        _loop_1 = function (filter) {
-                            this_1.eventTracer.say("DEBUG!:exploring " + filter + " found");
-                            var filterInCategory = category.filters.find(function (categoryFilter) {
-                                console.log({ categoryFilter: categoryFilter, categoryFiltersAsDict: categoryFiltersAsDict_1 });
-                                return categoryFilter.name.toLowerCase() === filter.toLowerCase() && categoryFiltersAsDict_1.hasOwnProperty(categoryFilter._id.toJSON());
-                            });
-                            if (filterInCategory) {
-                                this_1.eventTracer.say("DEBUG!: " + filterInCategory.name);
-                                validSearchFiltersWithIdAsKey[filterInCategory._id.toJSON()] = filterInCategory;
-                                validSearchFiltersIds.add(filterInCategory._id.toJSON());
-                            }
-                        };
-                        this_1 = this;
-                        for (filter in filters) {
-                            _loop_1(filter);
-                        }
-                        this.eventTracer.say("Valid search filter ids gotten : " + validSearchFiltersIds);
-                        return [4 /*yield*/, this.productRepository.getAsync({
-                                categories: category._id
-                            })];
+                        if (!(_i < discounts_1.length)) return [3 /*break*/, 6];
+                        discount = discounts_1[_i];
+                        productDiscount = void 0;
+                        if (!!(discount instanceof discount_1["default"])) return [3 /*break*/, 3];
+                        return [4 /*yield*/, this.discountService.getDiscountById(discount)];
                     case 2:
-                        allProductsWithCategoryId = _e.sent();
-                        productsMatchingFilters = [];
-                        // apply filters
-                        if (!object_utility_1["default"].objectSize(validSearchFiltersWithIdAsKey)) { // if no valid filter then all products are valid searches
-                            this.eventTracer.say("All products are valid searches");
-                            productsMatchingFilters = allProductsWithCategoryId;
-                        }
-                        else {
-                            this.eventTracer.say("narrowing down products based on valid search filters");
-                            for (_c = 0, allProductsWithCategoryId_1 = allProductsWithCategoryId; _c < allProductsWithCategoryId_1.length; _c++) {
-                                product = allProductsWithCategoryId_1[_c];
-                                productMatchesAllFilters = true;
-                                _loop_2 = function (filterId) {
-                                    var productFilterValue = product.filters.get(filterId);
-                                    if (!productFilterValue) {
-                                        productMatchesAllFilters = false;
-                                        this_2.eventTracer.say("DEBUG ONLY!!: Product does not have filter with name " + validSearchFiltersWithIdAsKey[filterId].name);
-                                        return "break";
-                                    }
-                                    // get category filter value as well as type
-                                    var filterDetailsFromCategory = categoryFiltersAsDict_1[filterId];
-                                    switch (filterDetailsFromCategory.filterType.toLowerCase()) { // get filter type 
-                                        case "string":
-                                        default:
-                                            var filterName = filterDetailsFromCategory.name; // full circle back to name LOL
-                                            var selectedSearchValuesForFilter_1 = cleanedFilters[filterName];
-                                            var productValuesForFilter = (_d = product.filters.get(filterId)) === null || _d === void 0 ? void 0 : _d.values;
-                                            var doesProductMatchFilter = productValuesForFilter === null || productValuesForFilter === void 0 ? void 0 : productValuesForFilter.some(function (productValue) { return selectedSearchValuesForFilter_1.includes(productValue); });
-                                            if (!doesProductMatchFilter) {
-                                                this_2.eventTracer.say("DEBUG ONLY!!: Product does not have a valid value for filter with name " + validSearchFiltersWithIdAsKey[filterId].name + ", filter values " + selectedSearchValuesForFilter_1 + ", product values: " + productValuesForFilter);
-                                                productMatchesAllFilters = false;
-                                                break;
-                                            }
-                                    }
-                                };
-                                this_2 = this;
-                                for (filterId in validSearchFiltersWithIdAsKey) {
-                                    state_1 = _loop_2(filterId);
-                                    if (state_1 === "break")
-                                        break;
-                                }
-                                if (productMatchesAllFilters) {
-                                    this.eventTracer.say("DEBUG: Product matches filters");
-                                    productsMatchingFilters.push(product);
-                                }
+                        productDiscount = _b.sent();
+                        return [3 /*break*/, 4];
+                    case 3:
+                        productDiscount = discount;
+                        _b.label = 4;
+                    case 4:
+                        cleanedDiscount.push(productDiscount);
+                        _b.label = 5;
+                    case 5:
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 6:
+                        cleanedDiscount.sort(function (a, b) {
+                            var _a, _b, _c, _d;
+                            var millisecondsForA = (_b = (_a = a.createdAt) === null || _a === void 0 ? void 0 : _a.getTime()) !== null && _b !== void 0 ? _b : 0;
+                            var millisecondsForB = (_d = (_c = b.createdAt) === null || _c === void 0 ? void 0 : _c.getTime()) !== null && _d !== void 0 ? _d : 0;
+                            return millisecondsForB - millisecondsForA; // sort date in descending order
+                        });
+                        for (_a = 0, cleanedDiscount_1 = cleanedDiscount; _a < cleanedDiscount_1.length; _a++) {
+                            discount = cleanedDiscount_1[_a];
+                            console.log({ "Working": "WORKING", discount: discount });
+                            if (this.isValidDiscount(discount, product.currency)) {
+                                return [2 /*return*/, discount];
                             }
                         }
-                        category.products = productsMatchingFilters;
-                        //  this.eventTracer.isSuccessWithResponseAndMessage(category);
-                        this.eventTracer.isSuccessWithResponseAndMessage(categoryFiltersAsDict_1);
-                        return [2 /*return*/, category];
+                        return [2 /*return*/, null];
+                }
+            });
+        }); };
+        this.getDiscountedPriceAndAppliedDiscountsForProduct = function (product) { return __awaiter(_this, void 0, Promise, function () {
+            var discountedPrice, priceDiscount, activeDiscount, ex_5;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        this.eventTracer.say("Get Discounted Price And Applied DiscountsForProduct");
+                        if (!product.discounts.length) {
+                            return [2 /*return*/, product];
+                        }
+                        discountedPrice = product.price;
+                        priceDiscount = void 0;
+                        product.discountedPrice = product.price;
+                        return [4 /*yield*/, this.getActiveDiscount(product)];
+                    case 1:
+                        activeDiscount = _a.sent();
+                        if (!activeDiscount) {
+                            return [2 /*return*/, product];
+                        }
+                        switch (activeDiscount.discountType) {
+                            case discount_1.DiscountType.fixed:
+                                priceDiscount = discountedPrice - activeDiscount.value;
+                                console.log({ discountedPrice: discountedPrice, priceDiscount: priceDiscount, activeDiscountVal: activeDiscount.value });
+                                if (priceDiscount <= 0) {
+                                    priceDiscount = discountedPrice;
+                                }
+                                discountedPrice = priceDiscount;
+                                product.discountedPrice = discountedPrice;
+                                product.applieddiscounts.push(activeDiscount);
+                                break;
+                            case discount_1.DiscountType.percentage:
+                                priceDiscount = discountedPrice * (1 - activeDiscount.value);
+                                if (priceDiscount <= 0) {
+                                    priceDiscount = discountedPrice;
+                                }
+                                discountedPrice = priceDiscount;
+                                product.discountedPrice = discountedPrice;
+                                product.applieddiscounts.push(activeDiscount);
+                                break;
+                            case discount_1.DiscountType.bogo:
+                                break;
+                            default:
+                                break;
+                        }
+                        this.eventTracer.isSuccessWithResponseAndMessage(product);
+                        return [2 /*return*/, product];
+                    case 2:
+                        ex_5 = _a.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_5);
+                        throw ex_5;
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        this.applyDiscount = function (productId, discountId) { return __awaiter(_this, void 0, Promise, function () {
+            var discount, product, productDiscountSet, updatedDiscountIds, ex_6;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 5, , 6]);
+                        this.eventTracer.say("Apply Discount");
+                        return [4 /*yield*/, this.discountService.getDiscountById(discountId)];
+                    case 1:
+                        discount = _a.sent();
+                        if (!discount)
+                            throw new not_found_exception_1["default"]("Discount with id " + discountId + " not found");
+                        return [4 /*yield*/, this.productRepository.getByIdAsync(new mongoose_1.Types.ObjectId(productId))];
+                    case 2:
+                        product = _a.sent();
+                        if (!product)
+                            throw new not_found_exception_1["default"]("Product with id " + productId + " not found");
+                        productDiscountSet = new Set((product.discounts).map(function (discount) { return discount.toString(); }));
+                        productDiscountSet.add(discountId.toString());
+                        updatedDiscountIds = __spreadArrays(productDiscountSet).map(function (productIdString) { return new mongoose_1.Types.ObjectId(productIdString); });
+                        product.discounts = updatedDiscountIds;
+                        return [4 /*yield*/, this.productRepository.updateByIdAsync(productId, { discounts: product.discounts })];
                     case 3:
-                        ex_4 = _e.sent();
-                        this.eventTracer.isExceptionWithMessage("" + ex_4);
-                        throw ex_4;
-                    case 4: return [2 /*return*/];
+                        _a.sent();
+                        this.eventTracer.isSuccessWithResponseAndMessage(product);
+                        return [4 /*yield*/, this.productRepository.getByIdAsync(new mongoose_1.Types.ObjectId(productId))];
+                    case 4: return [2 /*return*/, _a.sent()];
+                    case 5:
+                        ex_6 = _a.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_6);
+                        throw ex_6;
+                    case 6: return [2 /*return*/];
+                }
+            });
+        }); };
+        this.getProductsWithDiscountedPriceByIds = function (ids) { return __awaiter(_this, void 0, Promise, function () {
+            var productsWithDiscount, response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log({ ids: ids });
+                        return [4 /*yield*/, this.productRepository.contains({ _id: ids }, { discounts: true })];
+                    case 1:
+                        productsWithDiscount = _a.sent();
+                        return [4 /*yield*/, this.convertProductsToProductResponse(productsWithDiscount, true)];
+                    case 2:
+                        response = _a.sent();
+                        return [2 /*return*/, response];
+                }
+            });
+        }); };
+        this.getProductsWithSpecialOffer = function (specialOfferId) { return __awaiter(_this, void 0, Promise, function () {
+            var discounts, discountIds, productsWithDiscounts, _i, discountIds_1, discountId, specialOrderProducts, specialOrderProductsResponse, ex_7;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 7, , 8]);
+                        this.eventTracer.say("Getting products with special offer for " + specialOfferId);
+                        specialOfferId = new mongoose_1.Types.ObjectId(specialOfferId);
+                        return [4 /*yield*/, this.discountService.getDiscountsInSpecialOffer(specialOfferId)];
+                    case 1:
+                        discounts = _a.sent();
+                        discountIds = discounts.map(function (discount) { return discount._id; });
+                        this.eventTracer.say("Discounts found count : " + discounts.length);
+                        productsWithDiscounts = [];
+                        _i = 0, discountIds_1 = discountIds;
+                        _a.label = 2;
+                    case 2:
+                        if (!(_i < discountIds_1.length)) return [3 /*break*/, 6];
+                        discountId = discountIds_1[_i];
+                        return [4 /*yield*/, this.productRepository.getAsync({ discounts: discountId })];
+                    case 3:
+                        specialOrderProducts = _a.sent();
+                        return [4 /*yield*/, this.convertProductsToProductResponse(specialOrderProducts, true)];
+                    case 4:
+                        specialOrderProductsResponse = _a.sent();
+                        productsWithDiscounts = __spreadArrays(productsWithDiscounts, specialOrderProductsResponse);
+                        _a.label = 5;
+                    case 5:
+                        _i++;
+                        return [3 /*break*/, 2];
+                    case 6:
+                        this.eventTracer.isSuccessWithResponseAndMessage(productsWithDiscounts);
+                        return [2 /*return*/, productsWithDiscounts];
+                    case 7:
+                        ex_7 = _a.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_7);
+                        throw ex_7;
+                    case 8: return [2 /*return*/];
                 }
             });
         }); };
@@ -418,7 +681,8 @@ var ProductService = /** @class */ (function () {
         __param(0, tsyringe_1.inject(event_tracer_1.IIEventTracer)),
         __param(1, tsyringe_1.inject(category_service_1.IICategoryService)),
         __param(2, tsyringe_1.inject(product_repository_1.IIProductRepository)),
-        __param(3, tsyringe_1.inject(file_service_1.IIFileService))
+        __param(3, tsyringe_1.inject(discount_service_1.IIDiscountService)),
+        __param(4, tsyringe_1.inject(file_service_1.IIFileService))
     ], ProductService);
     return ProductService;
 }());

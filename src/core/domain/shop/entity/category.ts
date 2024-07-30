@@ -3,6 +3,7 @@ import BaseEntity from "../../common/entity/base_entity";
 import UploadFile from "../../common/model/upload_file";
 import { Filter } from "./filter";
 import Product from "./product";
+import { PaginationResponse } from "../../../domain/authentication/dto/results/pagination_result";
 
 interface CategoryInit {
     name: string;
@@ -22,7 +23,8 @@ export default class Category extends BaseEntity<Types.ObjectId>{
     parentCategory: Types.ObjectId | Category | null = null;
     subCategories: Category[] = [];
     filters: Filter[];
-    products: Product[]; //TODO: Replace with actual product
+    products:Product[]; //TODO: Replace with actual product
+    public pagedProducts: PaginationResponse<Product> | null;
 
     constructor(init: CategoryInit);
     public constructor(init: CategoryInit){
@@ -36,5 +38,6 @@ export default class Category extends BaseEntity<Types.ObjectId>{
         this.filters = init.filters ?? [];
         this.products = init.products ?? [];
         this.subCategories = [];
+        this.pagedProducts = null;
     }
 }

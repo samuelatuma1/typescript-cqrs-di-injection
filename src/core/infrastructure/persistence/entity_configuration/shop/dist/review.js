@@ -8,6 +8,9 @@ var ReviewResponseSchema = new mongoose_1.Schema({
     responseBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', "default": null }
 });
 exports.ReviewSchema = new mongoose_1.Schema({
+    createdAt: { type: Date },
+    updatedAt: { type: Date },
+    recordStatus: { type: String },
     rating: { type: Number },
     reviewedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', "default": null },
     title: { type: String },

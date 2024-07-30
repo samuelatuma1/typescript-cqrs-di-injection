@@ -26,6 +26,9 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
     }
     addManyAsync = async (entities: TEntity[]): Promise<TEntity[]> => {
         const entitiesToSave = entities.map(this.convertToEntity);
+        if(!entitiesToSave.length){
+            return [];
+        }
         await this._model.insertMany(entitiesToSave);
 
         return entitiesToSave;
@@ -161,11 +164,26 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
         return await this._model.findOne(query) ?? null;
     }
     
-    contains = async (query: Partial<{[k in keyof TEntity]: any[]}>): Promise<TEntity[]> => {
+    contains = async (query: Partial<{[k in keyof TEntity]: any[]}>, joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity[]> => {
         let actualQuery: Partial<{[k in keyof TEntity]: {[key: string]: any[]}}> = {};
         for(let key in query){
             actualQuery[key] = {"$in": query[key]}
         }
-        return await this.getAsync(actualQuery);
+        
+        return await this.getAsync(actualQuery, joins);
+    }
+
+
+    or = async (queries: Partial<{[k in keyof TEntity]: any}>[], joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity[]> => {
+        
+        let dbQuery = this._model.find({$or: queries});
+        if(joins){
+            for(let key in joins){
+                if(joins[key]){
+                    dbQuery.populate(key)
+                }
+            }
+        }
+        return await dbQuery;
     }
 }

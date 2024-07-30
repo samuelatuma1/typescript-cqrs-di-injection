@@ -121,6 +121,9 @@ var CloudinaryService = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
+                        if (!publicId) {
+                            return [2 /*return*/, null];
+                        }
                         this.eventTracer.say("\"Deleting file with public id " + publicId);
                         return [4 /*yield*/, cloudinary_1.v2.uploader.destroy(publicId)];
                     case 1:

@@ -36,6 +36,7 @@ var Product = /** @class */ (function (_super) {
         _this = _super.call(this, id) || this;
         _this.reviews = [];
         _this.variants = [];
+        _this.discounts = [];
         _this.name = init.name;
         _this.desc = (_a = init.desc) !== null && _a !== void 0 ? _a : "";
         _this.mainImg = (_b = init.mainImg) !== null && _b !== void 0 ? _b : null;
@@ -47,6 +48,7 @@ var Product = /** @class */ (function (_super) {
         _this.categories = (_e = init.categories) !== null && _e !== void 0 ? _e : [];
         _this.reviews = [];
         _this.extras = (_f = init.extras) !== null && _f !== void 0 ? _f : [];
+        _this.discounts = init.discounts;
         return _this;
     }
     return Product;

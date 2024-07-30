@@ -17,5 +17,8 @@ export const ErrorMiddleware = (
                 errorModel.errors = {}
         }
 
+        if(ex instanceof BaseException){
+          errorModel.errors = ex._errors;
+        }
         return response.status(errorStatusCode).json(errorModel);
   };

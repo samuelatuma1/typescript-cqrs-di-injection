@@ -310,5 +310,9 @@ export default class UserService implements IUserService {
             throw ex;
         }
     }
+
+    getUserByEmail = async (email: string): Promise<User | null> => {
+        return await this.userRepository.firstOrDefaultAsync({email});
+    }
 }
 

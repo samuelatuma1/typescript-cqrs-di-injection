@@ -8,6 +8,7 @@ import { ProductInventory } from "./product_inventory";
 import { Currency } from "../../../domain/common/enum/currency";
 import ProductExtra from "./product_extra";
 import { FilterType } from "../enum/filter_type";
+import Discount from "./discount";
 
 export interface ProductInit {
      name : string;
@@ -20,6 +21,7 @@ export interface ProductInit {
      filters: Map<string, FilterForProduct> // key is the filterId as string
      categories?: Types.ObjectId[];
      extras: ProductExtra[];
+     discounts?:  Discount[] | Types.ObjectId[]
 }
 
 class Variant {
@@ -49,6 +51,8 @@ export default class Product extends BaseEntity<Types.ObjectId> {
     public extras: ProductExtra[];
     public variants: Variant[] = [];
 
+    public discounts: Discount[] | Types.ObjectId[] = []
+
     public constructor(init: ProductInit){
         const id = new Types.ObjectId();
         super(id);
@@ -63,6 +67,7 @@ export default class Product extends BaseEntity<Types.ObjectId> {
         this.categories = init.categories ?? [];
         this.reviews = [];
         this.extras = init.extras ?? []
+        this.discounts = init.discounts;
     }
 
 }

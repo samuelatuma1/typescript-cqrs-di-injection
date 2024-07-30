@@ -27,12 +27,14 @@ var User = /** @class */ (function (_super) {
         _this.isactive = true;
         _this.isadmin = false;
         _this.roles = [];
+        _this.address = null;
         _this.permissions = [];
         _this.email = email;
         _this.name = name,
             _this.password = password;
         _this.permissions = permissions;
         _this.roles = roles;
+        _this.address = null;
         return _this;
     }
     return User;

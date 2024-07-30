@@ -128,6 +128,25 @@ var ProductController = /** @class */ (function (_super) {
                 }
             });
         }); };
+        _this.specialOffers = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var offerId, product, ex_4;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        offerId = new mongoose_1.Types.ObjectId(req.params.offerId);
+                        return [4 /*yield*/, this.productService.getProductsWithSpecialOffer(offerId)];
+                    case 1:
+                        product = _a.sent();
+                        return [2 /*return*/, res.json(product)];
+                    case 2:
+                        ex_4 = _a.sent();
+                        next(ex_4);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
         return _this;
     }
     ProductController = __decorate([

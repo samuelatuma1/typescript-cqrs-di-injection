@@ -16,6 +16,7 @@ var categorgySchema = new mongoose_1.Schema({
     parentCategory: { type: mongoose_1.Types.ObjectId, ref: 'Category', "default": null },
     filters: { type: [filter_config_1.FilterSchema] },
     products: { type: [product_config_1.ProductSchema] },
-    subCategories: { type: [] }
+    subCategories: { type: [] },
+    pagedProducts: { type: mongoose_1.Schema.Types.Mixed }
 });
 exports.categoryModel = mongoose_1.model("Category", categorgySchema);

@@ -33,6 +33,7 @@ var Category = /** @class */ (function (_super) {
         _this.filters = (_c = init.filters) !== null && _c !== void 0 ? _c : [];
         _this.products = (_d = init.products) !== null && _d !== void 0 ? _d : [];
         _this.subCategories = [];
+        _this.pagedProducts = null;
         return _this;
     }
     return Category;

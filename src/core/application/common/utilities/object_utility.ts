@@ -18,4 +18,17 @@ export default class ObjectUtility {
     static objectSize = (obj: {[key: string]: any}): number => {
         return Object.keys(obj).length;
     }
+
+    static removeNullOrUndefinedValuesFromObject<T>(obj: T) : T {
+        let response : {[key: string]: any}= {}
+        for (let [key, value] of Object.entries(obj)){
+            if(value === null || value === undefined){
+
+            }
+            else{
+                response[key] = value
+            }
+        }
+        return response as T;
+    }
 }

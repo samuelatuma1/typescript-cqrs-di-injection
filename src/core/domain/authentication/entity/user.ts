@@ -2,6 +2,9 @@ import { Types } from "mongoose";
 import BaseEntity from "../../common/entity/base_entity";
 import UserRole from "./user_role";
 import UserPermission from "./user_permission";
+import Address from "./address";
+
+
 
 export default class User extends BaseEntity<Types.ObjectId>{
     public name?: string;
@@ -11,6 +14,7 @@ export default class User extends BaseEntity<Types.ObjectId>{
     public isadmin: boolean = false;
     public roles: Types.ObjectId[] | UserRole[] = []
 
+    public address: Types.ObjectId | Address | null = null
     public permissions: Types.ObjectId[] | UserPermission[] = []
 
     public constructor(email: string, password: string , name: string = '', permissions: Types.ObjectId[] | UserPermission[] = [], roles: Types.ObjectId[] | UserRole[] = []){
@@ -22,6 +26,7 @@ export default class User extends BaseEntity<Types.ObjectId>{
         
         this.permissions = permissions;
         this.roles = roles;
+        this.address = null;
     }
 
 }

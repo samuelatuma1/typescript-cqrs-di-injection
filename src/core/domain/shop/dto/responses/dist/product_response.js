@@ -20,6 +20,8 @@ var ProductResponse = /** @class */ (function (_super) {
     function ProductResponse() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.allFiltersForProduct = {};
+        _this.discountedPrice = 0;
+        _this.applieddiscounts = [];
         return _this;
     }
     return ProductResponse;

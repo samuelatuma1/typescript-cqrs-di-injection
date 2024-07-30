@@ -6,13 +6,22 @@ import { CreateCategoryRequest, CreateFilterRequest, UpdateFilterRequest } from 
 import ICategoryService, { IICategoryService } from "../../core/application/contract/services/shop/category_service";
 import { Types } from "mongoose";
 import IProductService, { IIProductService } from "../../core/application/contract/services/shop/product_service";
+import IDiscountService, { IIDiscountService } from "../../core/application/contract/services/shop/discount_service";
+import { CreateDiscountRequest, SpecialOfferRequest } from "../../core/domain/shop/dto/requests/discount_request";
+import IOrderService, { IIOrderService } from "../../core/application/contract/services/shop/order_service";
+import { CreateCartRequest } from "../../core/domain/shop/dto/requests/cart_request";
+import { IBillboardService, IIBillboardService } from "../../core/application/contract/services/shop/billboard_service";
+import { CreateBillboardRequest, SearchBillboardRequest, UpdateBillboardRequest } from "../../core/domain/shop/dto/requests/billboard_requests";
 
 @injectable()
 export default class ShopController extends BaseController{
 
   constructor(
     @inject(IICategoryService) private categoryService: ICategoryService,
-    @inject(IIProductService) private readonly productService: IProductService
+    @inject(IIProductService) private readonly productService: IProductService,
+    @inject(IIDiscountService) private readonly discountService: IDiscountService,
+    @inject(IIOrderService) private readonly orderService: IOrderService,
+    @inject(IIBillboardService) private readonly billboardService: IBillboardService
   ) {
     super();
   }
@@ -22,7 +31,6 @@ export default class ShopController extends BaseController{
         let data = req.body.data;
         let categoryDTO = SerializationUtility.deserializeJson<CreateCategoryRequest>(data);
         categoryDTO.img = this.convertReqFileToUploadFile(req);
-        console.log({categoryDTO})
         const createdCategory = await this.categoryService.createCategory(categoryDTO);
         res.json(createdCategory);
     }
@@ -77,4 +85,137 @@ export default class ShopController extends BaseController{
         next(ex)
     }
   }
+
+  createDiscount = async (req: Request<{}, {}, CreateDiscountRequest>, res: Response, next: NextFunction) => {
+    try{
+        const discount = await this.discountService.createDiscount(req.body);
+        return res.json(discount);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  addDiscount = async (req: Request<{}, {}, {}>, res: Response, next: NextFunction) => {
+    let queryParams = req.query as unknown as {discountId: Types.ObjectId, productId?: Types.ObjectId};
+    
+    try{
+      let addedDiscountForProduct = await this.productService.applyDiscount(queryParams.productId, queryParams.discountId);
+      return res.json(addedDiscountForProduct)
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  createSpecialOffer = async (req: Request<{}, {}, SpecialOfferRequest>, res: Response, next: NextFunction) => {
+    try{
+      let specialOffer = await this.discountService.createSpecialOffer(req.body);
+      return res.json(specialOffer)
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  addDiscountsToSpecialOffer = async (req: Request<{specialOfferId: Types.ObjectId}, {}, Types.ObjectId[]>, res: Response, next: NextFunction) => {
+    try{
+      const specialOfferId = new Types.ObjectId(req.params.specialOfferId);
+      let specialOfferDiscounts = await this.discountService.addDiscountsToSpecialOffer(specialOfferId, req.body);
+      return res.json(specialOfferDiscounts)
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  getActiveSpecialOffers = async (req: Request<{}, {}, {}>, res: Response, next: NextFunction) => {
+    try{
+      const activeSpecialOffers = await this.discountService.getActiveSpecialOffers(true);
+      return res.json(activeSpecialOffers);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+//createCart = async (createCartRequest: CreateCartRequest): Promise<Cart> 
+  createCart = async (req: Request<{}, {}, CreateCartRequest>, res: Response, next: NextFunction) => {
+    try{
+      // TODO: add middleware to harness email for user
+      let userCart = await this.orderService.createCart(req.body);
+      return res.json(userCart);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  createBillboard = async (req: Request<{}, {}, CreateBillboardRequest>, res: Response, next: NextFunction) => {
+    try{
+      let billBoard = await this.billboardService.createBillBoard(req.body)
+      return res.json(billBoard);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  updateBillboard = async (req: Request<{billboardId: Types.ObjectId}, {}, UpdateBillboardRequest>, res: Response, next: NextFunction) => {
+    try{
+      let {billboardId} = req.params;
+      let updatedBillboard = await this.billboardService.updateBillBoard(billboardId, req.body)
+      return res.json(updatedBillboard);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  deleteBillboard = async (req: Request<{billboardId: Types.ObjectId}, {}, UpdateBillboardRequest>, res: Response, next: NextFunction) => {
+    try{
+      let {billboardId} = req.params;
+      let updatedBillboard = await this.billboardService.deleteBillboard(billboardId)
+      return res.json(updatedBillboard);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  getActiveBillboards = async (req: Request<{}, {}, {}>, res: Response, next: NextFunction) => {
+    try{
+      let activeBillboads = await this.billboardService.getActiveBillboards()
+      return res.json(activeBillboads);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  getBillboard = async (req: Request<{billboardId: Types.ObjectId}, {}, {}>, res: Response, next: NextFunction) => {
+    try{
+      let {billboardId} = req.params;
+      let billboard = await this.billboardService.getBillboard(billboardId);
+      return res.json(billboard);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  searchBillboards = async (req: Request<{}, {}, {}, SearchBillboardRequest>, res: Response, next: NextFunction) => {
+    try{
+      
+      let billboards = await this.billboardService.search(req.query);
+      return res.json(billboards);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+
+
+
 }

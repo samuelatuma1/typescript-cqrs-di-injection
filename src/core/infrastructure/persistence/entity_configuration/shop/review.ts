@@ -7,6 +7,10 @@ const ReviewResponseSchema = new Schema<ReviewResponse>({
     responseBy: {type: Schema.Types.ObjectId, ref: 'User', default: null},
 })
 export const ReviewSchema = new Schema<Review>({
+    createdAt: {type: Date},
+    updatedAt: {type: Date},
+    recordStatus: {type: String},
+    
     rating: {type: Number},
     reviewedBy: {type: Schema.Types.ObjectId, ref: 'User', default: null},
     title: {type: String},
