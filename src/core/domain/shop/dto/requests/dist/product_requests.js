@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.UpdateProductRequest = exports.CreateProductRequest = exports.CreateFilterForProduct = void 0;
+exports.UpdateProductRequest = exports.UpdatePackProduct = exports.CreatePackProduct = exports.CreateProductRequest = exports.CreateFilterForProduct = void 0;
 var currency_1 = require("../../../../domain/common/enum/currency");
 var CreateFilterForProduct = /** @class */ (function () {
     function CreateFilterForProduct() {
@@ -11,7 +11,7 @@ exports.CreateFilterForProduct = CreateFilterForProduct;
 var CreateProductRequest = /** @class */ (function () {
     function CreateProductRequest(init) {
         if (init === void 0) { init = null; }
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
         this.mainImg = null;
         this.otherMedia = [];
         this.price = 0;
@@ -19,6 +19,7 @@ var CreateProductRequest = /** @class */ (function () {
         this.filters = {}; // key is the filterId as string
         this.categories = [];
         this.extras = [];
+        this.isPack = false;
         this.name = init === null || init === void 0 ? void 0 : init.name;
         this.desc = (_a = init === null || init === void 0 ? void 0 : init.desc) !== null && _a !== void 0 ? _a : "";
         this.mainImg = (_b = init === null || init === void 0 ? void 0 : init.mainImg) !== null && _b !== void 0 ? _b : null;
@@ -29,10 +30,25 @@ var CreateProductRequest = /** @class */ (function () {
         this.filters = (_g = init === null || init === void 0 ? void 0 : init.filters) !== null && _g !== void 0 ? _g : {};
         this.categories = (_h = init === null || init === void 0 ? void 0 : init.categories) !== null && _h !== void 0 ? _h : [];
         this.extras = (_j = init === null || init === void 0 ? void 0 : init.extras) !== null && _j !== void 0 ? _j : [];
+        this.isPack = (_k = init === null || init === void 0 ? void 0 : init.isPack) !== null && _k !== void 0 ? _k : false;
     }
     return CreateProductRequest;
 }());
 exports.CreateProductRequest = CreateProductRequest;
+var CreatePackProduct = /** @class */ (function () {
+    function CreatePackProduct() {
+        this.qty = 1;
+    }
+    return CreatePackProduct;
+}());
+exports.CreatePackProduct = CreatePackProduct;
+var UpdatePackProduct = /** @class */ (function () {
+    function UpdatePackProduct() {
+        this.qty = 1;
+    }
+    return UpdatePackProduct;
+}());
+exports.UpdatePackProduct = UpdatePackProduct;
 var UpdateProductRequest = /** @class */ (function () {
     function UpdateProductRequest() {
         this.price = 0;

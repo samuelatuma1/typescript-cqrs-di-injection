@@ -15,6 +15,7 @@ var BaseController = /** @class */ (function () {
         this.convertReqFilesToUploadFiles = function (req, fieldName) {
             var _a;
             if (fieldName === void 0) { fieldName = null; }
+            console.log("Na here we dey", req.files);
             var uploadFiles = [];
             try {
                 var files = req.files;

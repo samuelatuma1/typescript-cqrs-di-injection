@@ -4,6 +4,7 @@ var SerializationUtility = /** @class */ (function () {
     function SerializationUtility() {
     }
     SerializationUtility.deserializeJson = function (data) {
+        console.log({ data: data });
         try {
             return JSON.parse(data);
         }

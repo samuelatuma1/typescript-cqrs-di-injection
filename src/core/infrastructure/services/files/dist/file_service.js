@@ -52,13 +52,14 @@ var cloudinary_1 = require("cloudinary");
 var upload_file_1 = require("../../../../core/domain/common/model/upload_file");
 var fs_1 = require("fs");
 var path_1 = require("path");
+var serialization_utility_1 = require("../../../application/common/utilities/serialization_utility");
 var CloudinaryService = /** @class */ (function () {
     function CloudinaryService(cloudinaryConfig, eventTracer) {
         var _this = this;
         this.cloudinaryConfig = cloudinaryConfig;
         this.eventTracer = eventTracer;
         this.uploadFile = function (file) { return __awaiter(_this, void 0, Promise, function () {
-            var kwargs, response, ex_1;
+            var kwargs, response, ex_1, errormsg;
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
@@ -85,7 +86,15 @@ var CloudinaryService = /** @class */ (function () {
                         return [2 /*return*/, null];
                     case 2:
                         ex_1 = _b.sent();
-                        this.eventTracer.isExceptionWithMessage("" + ex_1);
+                        errormsg = "";
+                        try {
+                            this.eventTracer.say("Deleting disk file");
+                            this.deleteFileFromDisk(file.secure_url); // No need to await deleting, just delete
+                            errormsg = serialization_utility_1["default"].serializeJson(ex_1);
+                        }
+                        catch (exc) {
+                        }
+                        this.eventTracer.isExceptionWithMessage("EXCEPTION: " + (errormsg !== null && errormsg !== void 0 ? errormsg : ex_1));
                         return [2 /*return*/, null];
                     case 3: return [2 /*return*/];
                 }

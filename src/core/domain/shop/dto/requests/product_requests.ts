@@ -20,6 +20,8 @@ export interface CreateProductRequestInit {
     filters: {[key: string]: CreateFilterForProduct} ;// key is the filterId as string
     categories: string[] | Types.ObjectId[];
     extras: ProductExtra[];
+    isPack?: boolean;
+
 }
 export class CreateProductRequest {
     public name : string;
@@ -33,6 +35,8 @@ export class CreateProductRequest {
     public categories: string[] | Types.ObjectId[] = [];
     public extras: ProductExtra[] = [];
 
+    public isPack: boolean = false;
+
     public constructor(init: CreateProductRequestInit | null = null ){
         this.name = init?.name;
         this.desc = init?.desc ?? "";
@@ -43,10 +47,26 @@ export class CreateProductRequest {
         this.currency = init?.currency ?? Currency.NGN;
         this.filters = init?.filters ?? {};
         this.categories = init?.categories ?? [];
-        this.extras = init?.extras ?? []
+        this.extras = init?.extras ?? [];
+        this.isPack = init?.isPack ?? false;
     }
 }
 
+export class CreatePackProduct{
+    public name : string;
+    public desc?: string;
+    public mainImg: UploadFile | null ;
+    public otherMedia: UploadFile[];
+    public qty: number = 1;
+}
+
+export class UpdatePackProduct{
+    public name?: string;
+    public desc?: string;
+    public mainImg?: UploadFile | null ;
+    public otherMedia?: UploadFile[];
+    public qty?: number = 1;
+}
 export class UpdateProductRequest {
     public name?: string;
     public desc?: string;

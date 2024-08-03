@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { CreateProductRequest, UpdateProductRequest } from "../../../../domain/shop/dto/requests/product_requests";
+import { CreatePackProduct, CreateProductRequest, UpdatePackProduct, UpdateProductRequest } from "../../../../domain/shop/dto/requests/product_requests";
 import Product from "../../../../domain/shop/entity/product";
 import { ProductResponse } from "../../../../domain/shop/dto/responses/product_response";
 import Category from "../../../../domain/shop/entity/category";
@@ -12,6 +12,9 @@ export default interface IProductService {
     applyDiscount(productId: Types.ObjectId, discountId: Types.ObjectId): Promise<Product>;
     getProductsWithDiscountedPriceByIds(ids: Types.ObjectId[]): Promise<ProductResponse[]> 
     getProductsWithSpecialOffer (specialOfferId: Types.ObjectId | string): Promise<ProductResponse[]>
+    addPackProduct(productId: Types.ObjectId | string, createPackProduct: CreatePackProduct): Promise<ProductResponse>
+    deletePackProduct(productId: Types.ObjectId | string, packProductId: Types.ObjectId | string): Promise<ProductResponse>
+    updatePackProduct(productId: Types.ObjectId | string, packProductId: Types.ObjectId | string, packProductUpdate: UpdatePackProduct): Promise<ProductResponse>
 }
 
 export const IIProductService = "IProductService";

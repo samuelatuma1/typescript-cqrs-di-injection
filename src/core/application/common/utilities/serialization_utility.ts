@@ -10,6 +10,7 @@ export default class SerializationUtility{
     }
 
     static deserializeJson<T>(data: string): T | null {
+        console.log({data})
         try{
             return JSON.parse(data) as T; 
         }

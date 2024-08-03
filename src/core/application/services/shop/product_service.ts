@@ -1,4 +1,4 @@
-import { CreateFilterForProduct, CreateProductRequest, UpdateProductRequest } from "../../../domain/shop/dto/requests/product_requests";
+import { CreateFilterForProduct, CreatePackProduct, CreateProductRequest, UpdatePackProduct, UpdateProductRequest } from "../../../domain/shop/dto/requests/product_requests";
 import IProductService from "../../../application/contract/services/shop/product_service";
 import { inject, injectable } from "tsyringe";
 import IEventTracer, { IIEventTracer } from "../../../application/contract/observability/event_tracer";
@@ -7,7 +7,7 @@ import Category from "../../../domain/shop/entity/category";
 import ObjectUtility from "../../../application/common/utilities/object_utility";
 import { Filter } from "../../../domain/shop/entity/filter";
 import FilterForProduct from "../../../domain/shop/entity/filter_for_product";
-import Product, { ProductInit } from "../../../domain/shop/entity/product";
+import Product, { PackProduct, ProductInit } from "../../../domain/shop/entity/product";
 import { Types } from "mongoose";
 import { ProductInventory } from "../../../domain/shop/entity/product_inventory";
 import IProductRepository, { IIProductRepository } from "../../../application/contract/data_access/shop/product_repository";
@@ -18,7 +18,9 @@ import PaginationUtility from "../../../application/common/utilities/pagination_
 import IDiscountService, { IIDiscountService } from "../../../application/contract/services/shop/discount_service";
 import Discount, { DiscountType } from "../../../domain/shop/entity/discount";
 import DateUtility from "../../../application/common/utilities/date_utility";
-import { Currency } from "core/domain/common/enum/currency";
+import { Currency } from "../../../domain/common/enum/currency";
+import ValidationException from "../../../application/common/exceptions/validation_exception";
+import SerializationUtility from "../../../application/common/utilities/serialization_utility";
 
 
 
@@ -56,7 +58,8 @@ export default class ProductService implements IProductService {
             currency: createProductRequest.currency,
             filters: filtersForProductMap,
             categories: createProductRequest.categories?.map(cat => new Types.ObjectId(cat)) ?? [],
-            extras: createProductRequest.extras
+            extras: createProductRequest.extras,
+            isPack: createProductRequest.isPack
         });
     }
 
@@ -133,7 +136,90 @@ export default class ProductService implements IProductService {
             throw ex;
         }
     }
+    addPackProduct = async (productId: Types.ObjectId | string, createPackProduct: CreatePackProduct): Promise<ProductResponse> => {
+        // get product and ensure it is a pack.
+        productId = new Types.ObjectId(productId);
+        const product = await this.productRepository.getByIdAsync(productId);
+        if(!product?.isPack){
+            throw new ValidationException("Product not a Pack");
+        }
+        // add product to pack
+        let packProduct =  {...createPackProduct} as PackProduct;
+        product.packProducts.push(packProduct);
+        await this.productRepository.updateByIdAsync(productId, {packProducts: product.packProducts})
+        return this.convertProductToProductResponse(await this.productRepository.getByIdAsync(productId));
+        // save
+    }
+    
+    updatePackProduct = async (productId: Types.ObjectId | string, packProductId: Types.ObjectId | string, packProductUpdate: UpdatePackProduct): Promise<ProductResponse> => {
+        try{
+            this.eventTracer.say(`Update Pack Product: Product Id${productId}, PackProductId: ${packProductId}`);
+            this.eventTracer.request = packProductUpdate;
 
+            const cleanedUpdate = ObjectUtility.removeNullOrUndefinedValuesFromObject(packProductUpdate);
+            productId = new Types.ObjectId(productId);
+            packProductId = new Types.ObjectId(packProductId);
+            let product = await this.productRepository.getByIdAsync(productId);
+            if(!product){
+                throw new NotFoundException(`Product with id ${productId}`);
+            }
+            let packProducts = product.packProducts ?? []
+
+            for(let i = 0; i < packProducts.length; i++){
+                let packProduct = packProducts[i]
+                if(packProduct._id.toString() === packProductId.toString()){
+                    this.eventTracer.say(`Pack product to update found`)
+                    let updateForProduct = cleanedUpdate;
+                    if(cleanedUpdate.mainImg){
+                        await this.fileService.deleteFile(packProduct.mainImg?.public_id);
+                        let updatedMainImg = await this.fileService.uploadFile(cleanedUpdate.mainImg);
+                        updateForProduct.mainImg = updatedMainImg;
+                    }
+                    if(cleanedUpdate.otherMedia){
+                        let newMedia = await this.fileService.uploadMultipleFiles(cleanedUpdate.otherMedia);
+                        updateForProduct.otherMedia = [...packProduct.otherMedia, ...newMedia.filter(d => d)]
+                    }
+                    let updatedPackProduct = ObjectUtility.updateAwithB(packProduct, cleanedUpdate);
+                    this.eventTracer.say(`updatedPackProduct Update :\n    ${SerializationUtility.serializeJson(updatedPackProduct)}`);
+                    packProducts[i] = updatedPackProduct;
+
+                }
+            }
+            if(packProducts.length){
+                
+                await this.productRepository.updateByIdAsync(productId, { packProducts})
+            }
+            let response = this.convertProductToProductResponse(await this.productRepository.getByIdAsync(productId));
+            this.eventTracer.isSuccessWithResponseAndMessage(response);
+            return response;
+        }
+        catch(ex){
+            this.eventTracer.isExceptionWithMessage(`${ex}`);
+            throw ex;
+        }
+    }
+    deletePackProduct = async (productId: Types.ObjectId | string, packProductId: Types.ObjectId | string): Promise<ProductResponse> => {
+        // get product and ensure it is a pack.
+        productId = new Types.ObjectId(productId);
+        packProductId = new Types.ObjectId(packProductId)
+;        const product = await this.productRepository.getByIdAsync(productId);
+
+        if(!product?.isPack){
+            throw new ValidationException("Product not a Pack");
+        }
+        // add product to pack
+        let packProducts = product.packProducts ?? [];
+        for(let packProduct of packProducts){
+            console.log()
+            if(packProduct._id.toString() === packProductId.toString()){
+                packProduct.isDeleted = true;
+            }
+        }
+        console.log({packProducts})
+        await this.productRepository.updateByIdAsync(productId, {packProducts: packProducts})
+        return this.convertProductToProductResponse(await this.productRepository.getByIdAsync(productId));
+        // save
+    }
     private buildUpdateData = (product: Product, updateProductRequest: UpdateProductRequest): Partial<Product> => {
         const updateData: Partial<Product> = {};
     
@@ -195,6 +281,7 @@ export default class ProductService implements IProductService {
 
         let productResponse = new ProductResponse(product as ProductInit);
         productResponse._id = product._id;
+        productResponse.packProducts = productResponse.packProducts?.filter(prod => !prod.isDeleted);
         return productResponse
     }
 
@@ -203,7 +290,6 @@ export default class ProductService implements IProductService {
         for(let product of products){
             let productResponse = this.convertProductToProductResponse(product);
             if(includeDiscountAndDiscountPrice) {
-                console.log({product})
                 productResponse = await this.getDiscountedPriceAndAppliedDiscountsForProduct(productResponse);
             }
             productsResponses.push(productResponse)

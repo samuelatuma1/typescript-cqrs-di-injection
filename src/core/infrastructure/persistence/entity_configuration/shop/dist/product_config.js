@@ -18,6 +18,14 @@ var ExtraSchema = new mongoose_1.Schema({
     title: { type: String },
     body: { type: String }
 });
+var PackProductSchema = new mongoose_1.Schema({
+    name: { type: String },
+    desc: { type: String },
+    mainImg: { type: upload_file_config_1.UploadFileSchema, "default": null },
+    otherMedia: { type: [upload_file_config_1.UploadFileSchema], "default": [] },
+    qty: { type: Number, "default": 1 },
+    isDeleted: { type: Boolean, "default": false }
+});
 exports.ProductSchema = new mongoose_1.Schema({
     createdAt: { type: Date },
     updatedAt: { type: Date },
@@ -32,6 +40,8 @@ exports.ProductSchema = new mongoose_1.Schema({
     filters: { type: Map, of: FilterForProductSchema },
     categories: { type: [mongoose_1.Schema.Types.ObjectId], ref: 'Category' },
     extras: { type: [ExtraSchema] },
-    discounts: { type: [mongoose_1.Schema.Types.ObjectId], ref: 'Discount' }
+    discounts: { type: [mongoose_1.Schema.Types.ObjectId], ref: 'Discount' },
+    isPack: { type: Boolean, "default": false },
+    packProducts: { type: [PackProductSchema] }
 });
 exports.productModel = mongoose_1.model('Product', exports.ProductSchema);

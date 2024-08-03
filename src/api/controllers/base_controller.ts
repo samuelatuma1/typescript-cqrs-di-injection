@@ -12,7 +12,7 @@ export default class BaseController {
     }
 
     protected convertReqFilesToUploadFiles = (req: Request, fieldName: string | null= null): UploadFile[] => {
-        
+        console.log("Na here we dey", req.files)
         let uploadFiles: UploadFile[] = [];
         try{
             let files = req.files;

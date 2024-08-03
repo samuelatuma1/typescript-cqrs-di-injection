@@ -1,3 +1,5 @@
+import SerializationUtility from "./serialization_utility";
+
 export default class ObjectUtility {
     static areListsEqual = (list1: string[] | number[] | boolean[], list2: string[] | number[] | boolean[] ) => {
         if(list1.length !== list2.length)
@@ -30,5 +32,14 @@ export default class ObjectUtility {
             }
         }
         return response as T;
+    }
+
+    static updateAwithB<T extends object>(a: T, b: Partial<T>): T{
+        let c = SerializationUtility.serializeJson(a);
+        let d = SerializationUtility.deserializeJson<{[key: string]: any}>(c);
+        for(let [key, value] of Object.entries(b)){
+            d[key] = value
+        }
+        return d as T;
     }
 }

@@ -1,4 +1,4 @@
-import Product from "../../../../domain/shop/entity/product";
+import Product, { PackProduct } from "../../../../domain/shop/entity/product";
 import { model, Schema } from "mongoose";
 import { UploadFileSchema } from "../common/upload_file_config";
 import { ProductInventory } from "../../../../domain/shop/entity/product_inventory";
@@ -22,6 +22,15 @@ const ExtraSchema = new Schema<ProductExtra>({
     title: {type: String},
     body: {type: String}
 })
+
+const PackProductSchema = new Schema<PackProduct>({
+    name: {type: String},
+    desc: {type: String},
+    mainImg: {type: UploadFileSchema, default: null},
+    otherMedia: {type: [UploadFileSchema], default: []},
+    qty: {type: Number, default: 1},
+    isDeleted: {type: Boolean, default: false}
+})
 export const ProductSchema = new Schema<Product>({
     createdAt: {type: Date},
     updatedAt: {type: Date},
@@ -39,7 +48,9 @@ export const ProductSchema = new Schema<Product>({
     categories: {type: [Schema.Types.ObjectId], ref: 'Category'},
     extras: {type: [ExtraSchema]},
 
-    discounts: {type: [Schema.Types.ObjectId], ref: 'Discount'}
+    discounts: {type: [Schema.Types.ObjectId], ref: 'Discount'},
+    isPack: {type: Boolean, default: false},
+    packProducts: {type:[PackProductSchema]}
 });
 
 export const productModel = model<Product>('Product', ProductSchema);

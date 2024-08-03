@@ -6,6 +6,7 @@ import {v2 as cloudinary, UploadApiResponse} from 'cloudinary'
 import UploadFile from "../../../../core/domain/common/model/upload_file";
 import { promises as fs } from "fs";
 import path from "path";
+import SerializationUtility from "../../../application/common/utilities/serialization_utility";
 
 @injectable()
 export default class CloudinaryService implements IFileService{
@@ -47,7 +48,16 @@ export default class CloudinaryService implements IFileService{
             return null;
         }
         catch(ex){
-            this.eventTracer.isExceptionWithMessage(`${ex}`);
+            let errormsg = "";
+            try{
+                this.eventTracer.say(`Deleting disk file`)
+                this.deleteFileFromDisk(file.secure_url); // No need to await deleting, just delete
+                errormsg = SerializationUtility.serializeJson(ex)
+            }
+            catch(exc){
+                
+            }
+            this.eventTracer.isExceptionWithMessage(`EXCEPTION: ${errormsg ?? ex}`);
             return null;
         }
     }   

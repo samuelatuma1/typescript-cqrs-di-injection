@@ -78,6 +78,7 @@ var ProductController = /** @class */ (function (_super) {
                         reqBody = serialization_utility_1["default"].deserializeJson(req.body.data);
                         reqBody.mainImg = (_a = this.convertReqFilesToUploadFiles(req, "mainImg")[0]) !== null && _a !== void 0 ? _a : null;
                         reqBody.otherMedia = this.convertReqFilesToUploadFiles(req, "otherMedia");
+                        console.log({ reqBody: reqBody });
                         return [4 /*yield*/, this.productService.createProduct(reqBody)];
                     case 1:
                         createdProduct = _b.sent();
@@ -142,6 +143,75 @@ var ProductController = /** @class */ (function (_super) {
                     case 2:
                         ex_4 = _a.sent();
                         next(ex_4);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.addPackProduct = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var productId, reqBody, product, ex_5;
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 2, , 3]);
+                        productId = req.params.productId;
+                        reqBody = serialization_utility_1["default"].deserializeJson(req.body.data);
+                        reqBody.mainImg = (_a = this.convertReqFilesToUploadFiles(req, "mainImg")[0]) !== null && _a !== void 0 ? _a : null;
+                        reqBody.otherMedia = this.convertReqFilesToUploadFiles(req, "otherMedia");
+                        return [4 /*yield*/, this.productService.addPackProduct(productId, reqBody)];
+                    case 1:
+                        product = _b.sent();
+                        return [2 /*return*/, res.json(product)];
+                    case 2:
+                        ex_5 = _b.sent();
+                        next(ex_5);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        // public updatePackProduct = async (req: Request<{}>)
+        _this.deletePackProduct = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var productId, packProductId, product, ex_6;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        productId = req.params.productId;
+                        packProductId = req.query.packProductId;
+                        return [4 /*yield*/, this.productService.deletePackProduct(productId, packProductId)];
+                    case 1:
+                        product = _a.sent();
+                        return [2 /*return*/, res.json(product)];
+                    case 2:
+                        ex_6 = _a.sent();
+                        next(ex_6);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.updatePackProduct = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var productId, packProductId, reqBody, product, ex_7;
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 2, , 3]);
+                        productId = req.params.productId;
+                        packProductId = req.query.packProductId;
+                        console.log({ body: req.body });
+                        reqBody = serialization_utility_1["default"].deserializeJson(req.body.data);
+                        reqBody.mainImg = (_a = this.convertReqFilesToUploadFiles(req, "mainImg")[0]) !== null && _a !== void 0 ? _a : null;
+                        reqBody.otherMedia = this.convertReqFilesToUploadFiles(req, "otherMedia");
+                        return [4 /*yield*/, this.productService.updatePackProduct(productId, packProductId, reqBody)];
+                    case 1:
+                        product = _b.sent();
+                        return [2 /*return*/, res.json(product)];
+                    case 2:
+                        ex_7 = _b.sent();
+                        next(ex_7);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }
