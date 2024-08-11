@@ -67,14 +67,18 @@ var user_repository_1 = require("../../../application/contract/data_access/authe
 var hash_utility_1 = require("../../../application/common/utilities/hash_utility");
 var service_config_1 = require("../../../application/common/config/service_config");
 var user_1 = require("../../../domain/authentication/entity/user");
+var validation_exception_1 = require("../../../application/common/exceptions/validation_exception");
+var user_not_active_exception_1 = require("../../../application/common/exceptions/user_not_active_exception");
+var jwt_service_1 = require("../../../application/contract/services/authentication/jwt_service");
 var UserService = /** @class */ (function () {
-    function UserService(eventTracer, serviceConfig, permissionRepository, roleRepository, userRepository) {
+    function UserService(eventTracer, serviceConfig, permissionRepository, roleRepository, userRepository, jwtService) {
         var _this = this;
         this.eventTracer = eventTracer;
         this.serviceConfig = serviceConfig;
         this.permissionRepository = permissionRepository;
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
+        this.jwtService = jwtService;
         this.createPermission = function (createPermissionRequest) { return __awaiter(_this, void 0, Promise, function () {
             var permissionWithName, userPermission, savedPermission, response, ex_1;
             return __generator(this, function (_a) {
@@ -271,7 +275,7 @@ var UserService = /** @class */ (function () {
                         if (userExists) {
                             throw new duplicate_exception_1["default"]("User with email " + createUserRequest.email + " already exists");
                         }
-                        hashedPassword = hash_utility_1["default"].hashStringWithSha512(createUserRequest.password, this.serviceConfig.hashkey);
+                        hashedPassword = this.hashUserPassword(createUserRequest.password);
                         this.eventTracer.say("Hashed Password: " + hashedPassword + ", hashkey: " + this.serviceConfig.hashkey);
                         user = new user_1["default"](createUserRequest.email, hashedPassword, createUserRequest.name);
                         return [4 /*yield*/, this.userRepository.addAsync(user)];
@@ -289,6 +293,13 @@ var UserService = /** @class */ (function () {
                 }
             });
         }); };
+        this.hashUserPassword = function (password) {
+            return hash_utility_1["default"].hashStringWithSha512(password, _this.serviceConfig.hashkey);
+        };
+        this.doesPasswordMatchHash = function (password, hash) {
+            var hashPassword = _this.hashUserPassword(password);
+            return hashPassword === hash;
+        };
         this.assignPermissionsToUser = function (userId, permissions) { return __awaiter(_this, void 0, Promise, function () {
             var permissionsWithName, user, existingUserPermissions, existingUserPermissionsSet, _i, permissionsWithName_3, permission, response, ex_7;
             return __generator(this, function (_a) {
@@ -428,6 +439,92 @@ var UserService = /** @class */ (function () {
                 }
             });
         }); };
+        this.signInUser = function (signInUser) { return __awaiter(_this, void 0, Promise, function () {
+            var user, isValidPassword, userPermissions, userPermissionIdsFromRoles_1, allUserRolesPermissions, permissionNames, roleNames, accessTokenPayload, refreshTokenPayload, accessTokenExpiryInSeconds, accessToken, refreshTokenExpiryInSeconds, refreshToken, response, ex_10;
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 3, , 4]);
+                        this.eventTracer.request = signInUser;
+                        this.eventTracer.say("Sign in user");
+                        return [4 /*yield*/, this.userRepository.firstOrDefaultAsync({ email: signInUser.email }, { roles: true, permissions: true })];
+                    case 1:
+                        user = _b.sent();
+                        if (!user) {
+                            throw new not_found_exception_1["default"]("User with email " + signInUser.email + " does not exist");
+                        }
+                        isValidPassword = this.doesPasswordMatchHash(signInUser.password, user.password);
+                        if (!isValidPassword) {
+                            throw new validation_exception_1["default"]("Password incorrect");
+                        }
+                        if (!user.isactive) {
+                            throw new user_not_active_exception_1["default"]("User not active");
+                        }
+                        userPermissions = (_a = user.permissions) !== null && _a !== void 0 ? _a : [];
+                        this.eventTracer.say("Saved user permissions " + userPermissions.length);
+                        userPermissionIdsFromRoles_1 = [];
+                        user.roles.forEach(function (role) {
+                            console.log({ role: role });
+                            var permissionForRoles = [];
+                            for (var _i = 0, _a = role.permissions; _i < _a.length; _i++) {
+                                var userPermissionId = _a[_i];
+                                console.log({ userPermissionId: userPermissionId });
+                                permissionForRoles.push(userPermissionId);
+                            }
+                            userPermissionIdsFromRoles_1 = __spreadArrays(userPermissionIdsFromRoles_1, permissionForRoles);
+                        });
+                        return [4 /*yield*/, this.permissionRepository.contains({ _id: userPermissionIdsFromRoles_1 })];
+                    case 2:
+                        allUserRolesPermissions = _b.sent();
+                        this.eventTracer.say("Getting user permissions from roles");
+                        userPermissions = __spreadArrays(userPermissions, allUserRolesPermissions);
+                        permissionNames = userPermissions.map(function (permission) { return permission.name; });
+                        this.eventTracer.say("All user permissions count: " + userPermissions.length + ".");
+                        this.eventTracer.say("All user roles count: " + user.roles.length + ".");
+                        roleNames = user.roles.map(function (role) { return role.name; });
+                        this.eventTracer.say("Getting access and refresh tokens");
+                        accessTokenPayload = {
+                            email: user.email,
+                            roles: roleNames,
+                            permissions: permissionNames,
+                            isAdmin: user.isadmin
+                        };
+                        refreshTokenPayload = {
+                            email: user.email
+                        };
+                        accessTokenExpiryInSeconds = 60 * 60;
+                        accessToken = this.jwtService.encode(accessTokenPayload, accessTokenExpiryInSeconds, this.serviceConfig.jwtsecret);
+                        refreshTokenExpiryInSeconds = 60 * 60 * 24;
+                        refreshToken = this.jwtService.encode(refreshTokenPayload, refreshTokenExpiryInSeconds, this.serviceConfig.jwtsecret);
+                        response = {
+                            email: user.email,
+                            roles: roleNames,
+                            permissions: permissionNames,
+                            isAdmin: user.isadmin,
+                            accessTokenExpiryInSeconds: accessTokenExpiryInSeconds,
+                            accessToken: accessToken,
+                            refreshToken: refreshToken,
+                            refreshTokenExpiryInSeconds: refreshTokenExpiryInSeconds
+                        };
+                        this.eventTracer.isSuccessWithResponseAndMessage(response, "user successfully signed in");
+                        return [2 /*return*/, response];
+                    case 3:
+                        ex_10 = _b.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_10);
+                        throw ex_10;
+                    case 4: return [2 /*return*/];
+                }
+            });
+        }); };
+        this.decodeAccessToken = function (token) {
+            try {
+                return _this.jwtService.decode(token, _this.serviceConfig.jwtsecret);
+            }
+            catch (ex) {
+                return null;
+            }
+        };
     }
     UserService = __decorate([
         tsyringe_1.injectable(),
@@ -435,7 +532,8 @@ var UserService = /** @class */ (function () {
         __param(1, tsyringe_1.inject(service_config_1.IIServiceConfig)),
         __param(2, tsyringe_1.inject(permission_repository_1.IIUserPermissionRepository)),
         __param(3, tsyringe_1.inject(role_repository_1.IIRoleRepository)),
-        __param(4, tsyringe_1.inject(user_repository_1.IIUserRepository))
+        __param(4, tsyringe_1.inject(user_repository_1.IIUserRepository)),
+        __param(5, tsyringe_1.inject(jwt_service_1.IIJwtService))
     ], UserService);
     return UserService;
 }());

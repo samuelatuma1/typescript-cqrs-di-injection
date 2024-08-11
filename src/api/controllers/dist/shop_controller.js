@@ -291,17 +291,20 @@ var ShopController = /** @class */ (function (_super) {
             });
         }); };
         _this.createBillboard = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var billBoard, ex_12;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var reqBody, billBoard, ex_12;
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, this.billboardService.createBillBoard(req.body)];
+                        _b.trys.push([0, 2, , 3]);
+                        reqBody = serialization_utility_1["default"].deserializeJson(req.body.data);
+                        reqBody.img = (_a = this.convertReqFilesToUploadFiles(req, "mainImg")[0]) !== null && _a !== void 0 ? _a : null;
+                        return [4 /*yield*/, this.billboardService.createBillBoard(reqBody)];
                     case 1:
-                        billBoard = _a.sent();
+                        billBoard = _b.sent();
                         return [2 /*return*/, res.json(billBoard)];
                     case 2:
-                        ex_12 = _a.sent();
+                        ex_12 = _b.sent();
                         next(ex_12);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];

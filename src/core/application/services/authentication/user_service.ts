@@ -13,10 +13,15 @@ import CreateRoleResponse from "../../../domain/authentication/dto/responses/cre
 import NotFoundException from "../../../application/common/exceptions/not_found_exception";
 import { Types } from "mongoose";
 import IUserRepository, { IIUserRepository } from "../../../application/contract/data_access/authentication/user_repository";
-import CreateUserRequest from "../../../domain/authentication/dto/requests/create_user_request";
+import CreateUserRequest, { SignInUserRequest } from "../../../domain/authentication/dto/requests/create_user_request";
 import HashUtility from "../../../application/common/utilities/hash_utility";
 import IServiceConfig, { IIServiceConfig } from "../../../application/common/config/service_config";
 import User from "../../../domain/authentication/entity/user";
+import ValidationException from "../../../application/common/exceptions/validation_exception";
+import UserNotActiveException from "../../../application/common/exceptions/user_not_active_exception";
+import IJwtService, { IIJwtService } from "../../../application/contract/services/authentication/jwt_service";
+import { SignInUserResponse } from "../../../domain/authentication/dto/responses/user_response";
+import { AccessTokenPayload } from "../../../domain/model/authentication/jwt_model";
 
 @injectable()
 export default class UserService implements IUserService {
@@ -27,6 +32,7 @@ export default class UserService implements IUserService {
         @inject(IIUserPermissionRepository) private readonly permissionRepository: IUserPermissionRepository,
         @inject(IIRoleRepository) private readonly roleRepository: IRoleRepository,
         @inject(IIUserRepository) private readonly userRepository: IUserRepository,
+        @inject(IIJwtService) private readonly jwtService: IJwtService
     ){
 
     }
@@ -187,7 +193,7 @@ export default class UserService implements IUserService {
 
             // validate password
             // hash password
-            const hashedPassword = HashUtility.hashStringWithSha512(createUserRequest.password, this.serviceConfig.hashkey);
+            const hashedPassword = this.hashUserPassword(createUserRequest.password);
             this.eventTracer.say(`Hashed Password: ${hashedPassword}, hashkey: ${this.serviceConfig.hashkey}`)
             const user = new User(createUserRequest.email, hashedPassword, createUserRequest.name);
 
@@ -202,6 +208,15 @@ export default class UserService implements IUserService {
             this.eventTracer.isExceptionWithMessage(`${ex}`);
             throw ex;
         }
+    }
+
+    private hashUserPassword = (password: string): string => {
+        return HashUtility.hashStringWithSha512(password, this.serviceConfig.hashkey);
+    }
+
+    private doesPasswordMatchHash = (password: string, hash: string) => {
+        let hashPassword = this.hashUserPassword(password);
+        return hashPassword === hash;
     }
 
     assignPermissionsToUser = async (userId: Types.ObjectId, permissions: string[]): Promise<User | null>=> {
@@ -314,5 +329,97 @@ export default class UserService implements IUserService {
     getUserByEmail = async (email: string): Promise<User | null> => {
         return await this.userRepository.firstOrDefaultAsync({email});
     }
+
+    signInUser = async (signInUser: SignInUserRequest) : Promise<SignInUserResponse> => {
+        // get user with email
+        
+        try{
+            this.eventTracer.request = signInUser;
+            this.eventTracer.say(`Sign in user`)
+            let user: User = await this.userRepository.firstOrDefaultAsync({email: signInUser.email}, {roles: true, permissions: true});
+            if(!user){
+                throw new NotFoundException(`User with email ${signInUser.email} does not exist`)
+            }
+            // if user exists
+            let isValidPassword = this.doesPasswordMatchHash(signInUser.password, user.password);
+            if(!isValidPassword){
+                throw new ValidationException(`Password incorrect`);
+            }
+            if(!user.isactive){
+                throw new UserNotActiveException(`User not active`);
+            }
+            let userPermissions: UserPermission[] = user.permissions as UserPermission[] ?? [];
+            this.eventTracer.say(`Saved user permissions ${userPermissions.length}`)
+            // if user is active, get user permissions
+            let userPermissionIdsFromRoles: Types.ObjectId[] = []
+            
+            user.roles.forEach(role => {
+                console.log({role})
+                let permissionForRoles: Types.ObjectId[] = []
+                
+                    for(let userPermissionId of (role as UserRole).permissions){
+                        console.log({userPermissionId})
+                        permissionForRoles.push(userPermissionId as Types.ObjectId)
+                    }
+                    userPermissionIdsFromRoles = [...userPermissionIdsFromRoles, ...permissionForRoles];
+                
+            })
+
+            let allUserRolesPermissions = await this.permissionRepository.contains({_id: userPermissionIdsFromRoles});
+            this.eventTracer.say(`Getting user permissions from roles`)
+            userPermissions = [...userPermissions, ...allUserRolesPermissions]
+            let permissionNames = userPermissions.map(permission => permission.name);
+            this.eventTracer.say(`All user permissions count: ${userPermissions.length}.`)
+            this.eventTracer.say(`All user roles count: ${user.roles.length}.`);
+            let roleNames = (user.roles as UserRole[]).map(role => role.name);
+
+            this.eventTracer.say(`Getting access and refresh tokens`)
+            let accessTokenPayload: AccessTokenPayload = {
+                email: user.email,
+                roles: roleNames,
+                permissions: permissionNames,
+                isAdmin: user.isadmin
+            }
+
+            let refreshTokenPayload = {
+                email: user.email
+            }
+            let accessTokenExpiryInSeconds = 60 * 60;
+            let accessToken = this.jwtService.encode(accessTokenPayload, accessTokenExpiryInSeconds, this.serviceConfig.jwtsecret);
+            let refreshTokenExpiryInSeconds = 60 * 60 * 24;
+
+            let refreshToken = this.jwtService.encode(refreshTokenPayload, refreshTokenExpiryInSeconds, this.serviceConfig.jwtsecret);
+            let response =  {
+                email: user.email,
+                roles: roleNames,
+                permissions: permissionNames,
+                isAdmin: user.isadmin,
+                accessTokenExpiryInSeconds,
+                accessToken,
+                refreshToken,
+                refreshTokenExpiryInSeconds,
+            }
+            
+            this.eventTracer.isSuccessWithResponseAndMessage(response, "user successfully signed in");
+            return response
+        }
+        catch(ex){
+            this.eventTracer.isExceptionWithMessage(`${ex}`);
+            throw ex;
+        }
+    }
+
+    decodeAccessToken = (token: string): AccessTokenPayload | null => {
+       try{
+        return this.jwtService.decode<AccessTokenPayload>(token, this.serviceConfig.jwtsecret);
+       }
+       catch(ex){
+        
+        return null;
+       }
+    }
 }
+
+
+
 

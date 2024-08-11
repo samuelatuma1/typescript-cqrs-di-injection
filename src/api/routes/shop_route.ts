@@ -25,7 +25,7 @@ shopRoute.get("/special-offer/active", (req, res, next) => shopController.getAct
 shopRoute.post("/cart", (req, res, next) => shopController.createCart(req, res, next));
 
 
-shopRoute.post("/billboard", (req, res, next) => shopController.createBillboard(req, res, next));
+shopRoute.post("/billboard", upload.fields([{name: 'mainImg', maxCount: 1}, {name: 'otherMedia', maxCount: 10}]), (req, res, next) => shopController.createBillboard(req, res, next));
 shopRoute.get("/billboard/active", (req, res, next) => shopController.getActiveBillboards(req, res, next));
 shopRoute.put("/billboard/:billboardId", (req: Request<{billboardId: Types.ObjectId}>, res, next) => shopController.updateBillboard(req, res, next));
 shopRoute.delete("/billboard/:billboardId", (req: Request<{billboardId: Types.ObjectId}>, res, next) => shopController.deleteBillboard(req, res, next));

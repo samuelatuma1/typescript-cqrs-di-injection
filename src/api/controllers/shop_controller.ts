@@ -142,7 +142,7 @@ export default class ShopController extends BaseController{
 //createCart = async (createCartRequest: CreateCartRequest): Promise<Cart> 
   createCart = async (req: Request<{}, {}, CreateCartRequest>, res: Response, next: NextFunction) => {
     try{
-      // TODO: add middleware to harness email for user
+      //TODO: add middleware to harness email for user
       let userCart = await this.orderService.createCart(req.body);
       return res.json(userCart);
     }
@@ -151,9 +151,11 @@ export default class ShopController extends BaseController{
     }
   }
 
-  createBillboard = async (req: Request<{}, {}, CreateBillboardRequest>, res: Response, next: NextFunction) => {
+  createBillboard = async (req: Request<{}, {}>, res: Response, next: NextFunction) => {
     try{
-      let billBoard = await this.billboardService.createBillBoard(req.body)
+      let reqBody = SerializationUtility.deserializeJson<CreateBillboardRequest>(req.body.data);
+      reqBody.img = this.convertReqFilesToUploadFiles(req as unknown as Request, "mainImg")[0] ?? null;
+      let billBoard = await this.billboardService.createBillBoard(reqBody)
       return res.json(billBoard);
     }
     catch(ex){

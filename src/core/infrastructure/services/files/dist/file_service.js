@@ -93,6 +93,7 @@ var CloudinaryService = /** @class */ (function () {
                             errormsg = serialization_utility_1["default"].serializeJson(ex_1);
                         }
                         catch (exc) {
+                            this.eventTracer.say("EXC : " + exc);
                         }
                         this.eventTracer.isExceptionWithMessage("EXCEPTION: " + (errormsg !== null && errormsg !== void 0 ? errormsg : ex_1));
                         return [2 /*return*/, null];

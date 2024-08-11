@@ -75,42 +75,49 @@ var BillboardService = /** @class */ (function () {
         this.fileService = fileService;
         this.maxActiveBillBoard = 3;
         this.createBillBoard = function (createBillboardRequest) { return __awaiter(_this, void 0, Promise, function () {
-            var validationErrors, billBoard, response, ex_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var validationErrors, _a, billBoard, response, ex_1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _a.trys.push([0, 2, , 3]);
+                        _b.trys.push([0, 4, , 5]);
                         validationErrors = (new billboard_validation_1.CreateBillboardValidator()).validate(createBillboardRequest);
                         if (object_utility_1["default"].objectSize(validationErrors)) {
                             throw new validation_exception_1["default"]("Invalid create billboard request", validationErrors);
                         }
                         this.eventTracer.request = createBillboardRequest;
                         this.eventTracer.say("Billboard: Create Billboard");
+                        if (!createBillboardRequest.img) return [3 /*break*/, 2];
+                        _a = createBillboardRequest;
+                        return [4 /*yield*/, this.fileService.uploadFile(createBillboardRequest.img)];
+                    case 1:
+                        _a.img = _b.sent();
+                        _b.label = 2;
+                    case 2:
                         billBoard = new bill_board_1["default"](__assign(__assign({}, createBillboardRequest), { isActive: false }));
                         return [4 /*yield*/, this.billboardRepository.addAsync(billBoard)];
-                    case 1:
-                        response = _a.sent();
+                    case 3:
+                        response = _b.sent();
                         this.eventTracer.isSuccessWithResponseAndMessage(response);
                         return [2 /*return*/, response];
-                    case 2:
-                        ex_1 = _a.sent();
+                    case 4:
+                        ex_1 = _b.sent();
                         this.eventTracer.isExceptionWithMessage("" + ex_1);
                         throw ex_1;
-                    case 3: return [2 /*return*/];
+                    case 5: return [2 /*return*/];
                 }
             });
         }); };
         this.updateBillBoard = function (id, update) { return __awaiter(_this, void 0, Promise, function () {
-            var billBoardId, billBoard, cleanedUpdate, activeBillBoardsCount, response, ex_2;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var billBoardId, billBoard, cleanedUpdate, activeBillBoardsCount, _a, response, ex_2;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _a.trys.push([0, 8, , 9]);
+                        _b.trys.push([0, 9, , 10]);
                         this.eventTracer.say("UpdateBillboard with id: " + id);
                         billBoardId = new mongoose_1.Types.ObjectId(id);
                         return [4 /*yield*/, this.billboardRepository.getByIdAsync(billBoardId)];
                     case 1:
-                        billBoard = _a.sent();
+                        billBoard = _b.sent();
                         if (!billBoard) {
                             throw new not_found_exception_1["default"]("Billboard with id " + id + " not found");
                             // delete ex
@@ -120,30 +127,34 @@ var BillboardService = /** @class */ (function () {
                         if (!(!billBoard.isActive && cleanedUpdate.isActive)) return [3 /*break*/, 3];
                         return [4 /*yield*/, this.billboardRepository.getAsync({ isActive: true })];
                     case 2:
-                        activeBillBoardsCount = (_a.sent()).length;
+                        activeBillBoardsCount = (_b.sent()).length;
                         if (activeBillBoardsCount >= this.maxActiveBillBoard) {
                             throw new out_of_range_exception_1["default"]("Maximum number of active billboards reached");
                         }
-                        _a.label = 3;
+                        _b.label = 3;
                     case 3:
-                        if (!cleanedUpdate.img) return [3 /*break*/, 5];
+                        if (!cleanedUpdate.img) return [3 /*break*/, 6];
                         return [4 /*yield*/, this.fileService.deleteFile(billBoard.img.public_id)];
                     case 4:
-                        _a.sent();
-                        _a.label = 5;
-                    case 5: return [4 /*yield*/, this.billboardRepository.updateByIdAsync(billBoardId, cleanedUpdate)];
-                    case 6:
-                        _a.sent();
-                        return [4 /*yield*/, this.billboardRepository.getByIdAsync(billBoardId)];
+                        _b.sent();
+                        _a = cleanedUpdate;
+                        return [4 /*yield*/, this.fileService.uploadFile(cleanedUpdate.img)];
+                    case 5:
+                        _a.img = _b.sent();
+                        _b.label = 6;
+                    case 6: return [4 /*yield*/, this.billboardRepository.updateByIdAsync(billBoardId, cleanedUpdate)];
                     case 7:
-                        response = _a.sent();
+                        _b.sent();
+                        return [4 /*yield*/, this.billboardRepository.getByIdAsync(billBoardId)];
+                    case 8:
+                        response = _b.sent();
                         this.eventTracer.isSuccessWithResponseAndMessage(response);
                         return [2 /*return*/, response];
-                    case 8:
-                        ex_2 = _a.sent();
+                    case 9:
+                        ex_2 = _b.sent();
                         this.eventTracer.isExceptionWithMessage("" + ex_2);
                         throw ex_2;
-                    case 9: return [2 /*return*/];
+                    case 10: return [2 /*return*/];
                 }
             });
         }); };

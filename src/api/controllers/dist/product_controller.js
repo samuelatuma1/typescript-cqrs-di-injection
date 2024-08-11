@@ -171,9 +171,48 @@ var ProductController = /** @class */ (function (_super) {
                 }
             });
         }); };
+        _this.addPackProducts = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var productId, reqBody, imgs, i, img, x, j, productImg, product, ex_6;
+            var _a, _b, _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        _d.trys.push([0, 2, , 3]);
+                        productId = req.params.productId;
+                        reqBody = serialization_utility_1["default"].deserializeJson(req.body.data);
+                        imgs = [];
+                        for (i = 1; i <= 10; i++) {
+                            img = (_a = this.convertReqFilesToUploadFiles(req, "mainImg" + i)) !== null && _a !== void 0 ? _a : [];
+                            if (img === null || img === void 0 ? void 0 : img.length) {
+                                imgs.push(img[0]);
+                            }
+                        }
+                        x = {};
+                        console.log("##################################################");
+                        console.log("##################################################");
+                        for (j = 0; j < ((_b = reqBody.length) !== null && _b !== void 0 ? _b : 0); j++) {
+                            productImg = (_c = imgs[j]) !== null && _c !== void 0 ? _c : null;
+                            reqBody[j].mainImg = productImg;
+                            x[j] = reqBody[j].mainImg;
+                        }
+                        console.log("##################################################");
+                        console.log(x);
+                        console.log("##################################################");
+                        return [4 /*yield*/, this.productService.addPackProducts(productId, reqBody)];
+                    case 1:
+                        product = _d.sent();
+                        return [2 /*return*/, res.json(product)];
+                    case 2:
+                        ex_6 = _d.sent();
+                        next(ex_6);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
         // public updatePackProduct = async (req: Request<{}>)
         _this.deletePackProduct = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var productId, packProductId, product, ex_6;
+            var productId, packProductId, product, ex_7;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -185,15 +224,15 @@ var ProductController = /** @class */ (function (_super) {
                         product = _a.sent();
                         return [2 /*return*/, res.json(product)];
                     case 2:
-                        ex_6 = _a.sent();
-                        next(ex_6);
+                        ex_7 = _a.sent();
+                        next(ex_7);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }
             });
         }); };
         _this.updatePackProduct = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var productId, packProductId, reqBody, product, ex_7;
+            var productId, packProductId, reqBody, product, ex_8;
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
@@ -210,8 +249,8 @@ var ProductController = /** @class */ (function (_super) {
                         product = _b.sent();
                         return [2 /*return*/, res.json(product)];
                     case 2:
-                        ex_7 = _b.sent();
-                        next(ex_7);
+                        ex_8 = _b.sent();
+                        next(ex_8);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }

@@ -55,7 +55,7 @@ export default class CloudinaryService implements IFileService{
                 errormsg = SerializationUtility.serializeJson(ex)
             }
             catch(exc){
-                
+                this.eventTracer.say(`EXC : ${exc}`);
             }
             this.eventTracer.isExceptionWithMessage(`EXCEPTION: ${errormsg ?? ex}`);
             return null;

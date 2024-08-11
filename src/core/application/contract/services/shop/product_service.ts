@@ -15,6 +15,7 @@ export default interface IProductService {
     addPackProduct(productId: Types.ObjectId | string, createPackProduct: CreatePackProduct): Promise<ProductResponse>
     deletePackProduct(productId: Types.ObjectId | string, packProductId: Types.ObjectId | string): Promise<ProductResponse>
     updatePackProduct(productId: Types.ObjectId | string, packProductId: Types.ObjectId | string, packProductUpdate: UpdatePackProduct): Promise<ProductResponse>
+    addPackProducts(productId: Types.ObjectId | string, createPackProducts: CreatePackProduct[]): Promise<ProductResponse> 
 }
 
 export const IIProductService = "IProductService";

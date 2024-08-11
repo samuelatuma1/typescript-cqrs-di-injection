@@ -33,7 +33,9 @@ export default class BillboardService implements IBillboardService{
             }
             this.eventTracer.request = createBillboardRequest;
             this.eventTracer.say("Billboard: Create Billboard");
-
+            if(createBillboardRequest.img){
+                createBillboardRequest.img = await this.fileService.uploadFile(createBillboardRequest.img);
+            }
             let billBoard = new Billboard({...createBillboardRequest, isActive: false});
 
             let response = await this.billboardRepository.addAsync(billBoard);
@@ -70,6 +72,8 @@ export default class BillboardService implements IBillboardService{
             if(cleanedUpdate.img){ // we want to delete existing billboard image 
             
                 await this.fileService.deleteFile(billBoard.img.public_id)
+
+                cleanedUpdate.img = await this.fileService.uploadFile(cleanedUpdate.img)
             }
 
             await this.billboardRepository.updateByIdAsync(billBoardId, cleanedUpdate);

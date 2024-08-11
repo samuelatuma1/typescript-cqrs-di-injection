@@ -3,6 +3,9 @@ import UploadFile from "../../../../domain/common/model/upload_file";
 import { BillboardType } from "../../enum/billboard_type";
 
 export class CreateBillboardRequest {
+    data<T>(data: any) {
+      throw new Error("Method not implemented.");
+    }
     public img: UploadFile;
     public title: string;
     public desc: string;

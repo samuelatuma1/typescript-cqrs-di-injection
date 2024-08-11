@@ -226,7 +226,7 @@ var ProductService = /** @class */ (function () {
             });
         }); };
         this.addPackProduct = function (productId, createPackProduct) { return __awaiter(_this, void 0, Promise, function () {
-            var product, packProduct, _a;
+            var product, uploadedImage, packProduct, _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -238,19 +238,69 @@ var ProductService = /** @class */ (function () {
                         if (!(product === null || product === void 0 ? void 0 : product.isPack)) {
                             throw new validation_exception_1["default"]("Product not a Pack");
                         }
+                        // add product to pack
+                        console.log("-----------------------------------------------------");
+                        console.log({ PRODUCTIMG: createPackProduct.mainImg });
+                        console.log("-----------------------------------------------------");
+                        if (!createPackProduct.mainImg) return [3 /*break*/, 3];
+                        return [4 /*yield*/, this.fileService.uploadFile(createPackProduct.mainImg)];
+                    case 2:
+                        uploadedImage = _b.sent();
+                        console.log({ uploadedImage: uploadedImage });
+                        createPackProduct.mainImg = uploadedImage;
+                        _b.label = 3;
+                    case 3:
                         packProduct = __assign({}, createPackProduct);
                         product.packProducts.push(packProduct);
                         return [4 /*yield*/, this.productRepository.updateByIdAsync(productId, { packProducts: product.packProducts })];
-                    case 2:
+                    case 4:
                         _b.sent();
                         _a = this.convertProductToProductResponse;
                         return [4 /*yield*/, this.productRepository.getByIdAsync(productId)];
-                    case 3: return [2 /*return*/, _a.apply(this, [_b.sent()])];
+                    case 5: return [2 /*return*/, _a.apply(this, [_b.sent()])];
+                }
+            });
+        }); };
+        this.addPackProducts = function (productId, createPackProducts) { return __awaiter(_this, void 0, Promise, function () {
+            var addedProducts, _i, createPackProducts_1, packProduct, addedProduct, _a, ex_2;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 6, , 7]);
+                        // get product and ensure it is a pack.
+                        productId = new mongoose_1.Types.ObjectId(productId);
+                        console.log({ createPackProducts: createPackProducts.map(function (pred) { return pred.mainImg; }) });
+                        this.eventTracer.say("Adding multiple products of size " + createPackProducts.length);
+                        this.eventTracer.request = createPackProducts;
+                        addedProducts = [];
+                        _i = 0, createPackProducts_1 = createPackProducts;
+                        _b.label = 1;
+                    case 1:
+                        if (!(_i < createPackProducts_1.length)) return [3 /*break*/, 4];
+                        packProduct = createPackProducts_1[_i];
+                        return [4 /*yield*/, this.addPackProduct(productId, packProduct)];
+                    case 2:
+                        addedProduct = _b.sent();
+                        addedProducts.push(addedProduct);
+                        _b.label = 3;
+                    case 3:
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 4:
+                        this.eventTracer.isSuccessWithResponseAndMessage(addedProducts);
+                        _a = this.convertProductToProductResponse;
+                        return [4 /*yield*/, this.productRepository.getByIdAsync(productId)];
+                    case 5: return [2 /*return*/, _a.apply(this, [_b.sent()])];
+                    case 6:
+                        ex_2 = _b.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_2);
+                        throw ex_2;
+                    case 7: return [2 /*return*/];
                 }
             });
         }); };
         this.updatePackProduct = function (productId, packProductId, packProductUpdate) { return __awaiter(_this, void 0, Promise, function () {
-            var cleanedUpdate, product, packProducts, i, packProduct, updateForProduct, updatedMainImg, newMedia, updatedPackProduct, response, _a, ex_2;
+            var cleanedUpdate, product, packProducts, i, packProduct, updateForProduct, updatedMainImg, newMedia, updatedPackProduct, response, _a, ex_3;
             var _b, _c;
             return __generator(this, function (_d) {
                 switch (_d.label) {
@@ -314,9 +364,9 @@ var ProductService = /** @class */ (function () {
                         this.eventTracer.isSuccessWithResponseAndMessage(response);
                         return [2 /*return*/, response];
                     case 13:
-                        ex_2 = _d.sent();
-                        this.eventTracer.isExceptionWithMessage("" + ex_2);
-                        throw ex_2;
+                        ex_3 = _d.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_3);
+                        throw ex_3;
                     case 14: return [2 /*return*/];
                 }
             });
@@ -339,12 +389,10 @@ var ProductService = /** @class */ (function () {
                         packProducts = (_b = product.packProducts) !== null && _b !== void 0 ? _b : [];
                         for (_i = 0, packProducts_1 = packProducts; _i < packProducts_1.length; _i++) {
                             packProduct = packProducts_1[_i];
-                            console.log();
                             if (packProduct._id.toString() === packProductId.toString()) {
                                 packProduct.isDeleted = true;
                             }
                         }
-                        console.log({ packProducts: packProducts });
                         return [4 /*yield*/, this.productRepository.updateByIdAsync(productId, { packProducts: packProducts })];
                     case 2:
                         _c.sent();
@@ -374,7 +422,7 @@ var ProductService = /** @class */ (function () {
             return updateData;
         };
         this.updateProduct = function (productId, updateProductRequest) { return __awaiter(_this, void 0, Promise, function () {
-            var product, updateData, categoriesIds, updatedCategories, categoryIds, _a, updatedProduct, ex_3;
+            var product, updateData, categoriesIds, updatedCategories, categoryIds, _a, updatedProduct, ex_4;
             var _b;
             return __generator(this, function (_c) {
                 switch (_c.label) {
@@ -415,9 +463,9 @@ var ProductService = /** @class */ (function () {
                         this.eventTracer.isSuccessWithResponseAndMessage(updateProductRequest);
                         return [2 /*return*/, updatedProduct];
                     case 9:
-                        ex_3 = _c.sent();
-                        this.eventTracer.isExceptionWithMessage("" + ex_3);
-                        throw ex_3;
+                        ex_4 = _c.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_4);
+                        throw ex_4;
                     case 10: return [2 /*return*/];
                 }
             });
@@ -460,7 +508,7 @@ var ProductService = /** @class */ (function () {
             });
         };
         this.getProduct = function (productId) { return __awaiter(_this, void 0, Promise, function () {
-            var productFromDb, product, allCategoriesFiltersDict, ex_4;
+            var productFromDb, product, allCategoriesFiltersDict, ex_5;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -481,9 +529,9 @@ var ProductService = /** @class */ (function () {
                         console.log({ pF: product.allFiltersForProduct, product: product, isProductResponse: product instanceof product_response_1.ProductResponse });
                         return [2 /*return*/, product];
                     case 4:
-                        ex_4 = _a.sent();
-                        this.eventTracer.isExceptionWithMessage("" + ex_4);
-                        throw ex_4;
+                        ex_5 = _a.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_5);
+                        throw ex_5;
                     case 5: return [2 /*return*/];
                 }
             });
@@ -500,7 +548,7 @@ var ProductService = /** @class */ (function () {
             if (page === void 0) { page = 0; }
             if (pageSize === void 0) { pageSize = 10; }
             return __awaiter(_this, void 0, Promise, function () {
-                var category, cleanedFilters, _i, _a, _b, filterName, filterValuesAsString, filterValues, categoryFiltersAsDict_1, validSearchFiltersWithIdAsKey, validSearchFiltersIds, _loop_1, this_1, filter, allProductsWithCategoryId, productsMatchingFilters, _c, allProductsWithCategoryId_1, product, productMatchesAllFilters, _loop_2, this_2, filterId, state_1, productsResponse, paginatedProducts, ex_5;
+                var category, cleanedFilters, _i, _a, _b, filterName, filterValuesAsString, filterValues, categoryFiltersAsDict_1, validSearchFiltersWithIdAsKey, validSearchFiltersIds, _loop_1, this_1, filter, allProductsWithCategoryId, productsMatchingFilters, _c, allProductsWithCategoryId_1, product, productMatchesAllFilters, _loop_2, this_2, filterId, state_1, productsResponse, paginatedProducts, ex_6;
                 var _d;
                 return __generator(this, function (_e) {
                     switch (_e.label) {
@@ -511,7 +559,6 @@ var ProductService = /** @class */ (function () {
                             return [4 /*yield*/, this.categoryService.getCategoryEnriched(categoryId, { subCategories: true, filters: true })];
                         case 1:
                             category = _e.sent();
-                            console.log({ category: category });
                             cleanedFilters = {};
                             this.eventTracer.say("Cleaning filters");
                             for (_i = 0, _a = Object.entries(filters); _i < _a.length; _i++) {
@@ -601,9 +648,9 @@ var ProductService = /** @class */ (function () {
                             this.eventTracer.isSuccessWithResponseAndMessage(category);
                             return [2 /*return*/, category];
                         case 4:
-                            ex_5 = _e.sent();
-                            this.eventTracer.isExceptionWithMessage("" + ex_5);
-                            throw ex_5;
+                            ex_6 = _e.sent();
+                            this.eventTracer.isExceptionWithMessage("" + ex_6);
+                            throw ex_6;
                         case 5: return [2 /*return*/];
                     }
                 });
@@ -674,7 +721,7 @@ var ProductService = /** @class */ (function () {
             });
         }); };
         this.getDiscountedPriceAndAppliedDiscountsForProduct = function (product) { return __awaiter(_this, void 0, Promise, function () {
-            var discountedPrice, priceDiscount, activeDiscount, ex_6;
+            var discountedPrice, priceDiscount, activeDiscount, ex_7;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -720,15 +767,15 @@ var ProductService = /** @class */ (function () {
                         this.eventTracer.isSuccessWithResponseAndMessage(product);
                         return [2 /*return*/, product];
                     case 2:
-                        ex_6 = _a.sent();
-                        this.eventTracer.isExceptionWithMessage("" + ex_6);
-                        throw ex_6;
+                        ex_7 = _a.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_7);
+                        throw ex_7;
                     case 3: return [2 /*return*/];
                 }
             });
         }); };
         this.applyDiscount = function (productId, discountId) { return __awaiter(_this, void 0, Promise, function () {
-            var discount, product, productDiscountSet, updatedDiscountIds, ex_7;
+            var discount, product, productDiscountSet, updatedDiscountIds, ex_8;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -755,9 +802,9 @@ var ProductService = /** @class */ (function () {
                         return [4 /*yield*/, this.productRepository.getByIdAsync(new mongoose_1.Types.ObjectId(productId))];
                     case 4: return [2 /*return*/, _a.sent()];
                     case 5:
-                        ex_7 = _a.sent();
-                        this.eventTracer.isExceptionWithMessage("" + ex_7);
-                        throw ex_7;
+                        ex_8 = _a.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_8);
+                        throw ex_8;
                     case 6: return [2 /*return*/];
                 }
             });
@@ -779,7 +826,7 @@ var ProductService = /** @class */ (function () {
             });
         }); };
         this.getProductsWithSpecialOffer = function (specialOfferId) { return __awaiter(_this, void 0, Promise, function () {
-            var discounts, discountIds, productsWithDiscounts, _i, discountIds_1, discountId, specialOrderProducts, specialOrderProductsResponse, ex_8;
+            var discounts, discountIds, productsWithDiscounts, _i, discountIds_1, discountId, specialOrderProducts, specialOrderProductsResponse, ex_9;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -812,9 +859,9 @@ var ProductService = /** @class */ (function () {
                         this.eventTracer.isSuccessWithResponseAndMessage(productsWithDiscounts);
                         return [2 /*return*/, productsWithDiscounts];
                     case 7:
-                        ex_8 = _a.sent();
-                        this.eventTracer.isExceptionWithMessage("" + ex_8);
-                        throw ex_8;
+                        ex_9 = _a.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_9);
+                        throw ex_9;
                     case 8: return [2 /*return*/];
                 }
             });

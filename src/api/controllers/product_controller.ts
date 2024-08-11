@@ -5,6 +5,7 @@ import { CreatePackProduct, CreateProductRequest, UpdatePackProduct, UpdateProdu
 import BaseController from "./base_controller";
 import SerializationUtility from "../../core/application/common/utilities/serialization_utility";
 import { Types } from "mongoose";
+import UploadFile from "../../core/domain/common/model/upload_file";
 
 @injectable()
 export default class ProductController extends BaseController {
@@ -75,6 +76,39 @@ export default class ProductController extends BaseController {
             reqBody.otherMedia = this.convertReqFilesToUploadFiles(req as unknown as Request, "otherMedia");
            
             let product = await this.productService.addPackProduct(productId, reqBody);
+            return res.json(product);
+        }
+        catch(ex){
+            next(ex)
+        }
+    }
+
+
+    public addPackProducts = async (req: Request<{productId: Types.ObjectId }>, res: Response, next: NextFunction) => {
+        try{
+            let productId = req.params.productId;
+            let reqBody: CreatePackProduct[] = SerializationUtility.deserializeJson<CreatePackProduct[]>(req.body.data);
+            let imgs: UploadFile[] = []
+            for(let i = 1; i <= 10; i++){
+                let img = this.convertReqFilesToUploadFiles(req as unknown as Request, `mainImg${i}`) ?? [];
+                if(img?.length){
+                    imgs.push(img[0])
+                }
+            }
+            let x: {[key: string]: UploadFile} = {}
+            console.log("##################################################")
+            console.log("##################################################")
+            for(let j = 0; j < (reqBody.length ?? 0); j++){
+                let productImg = imgs[j] ?? null;
+                
+                reqBody[j].mainImg = productImg;
+                x[j] = reqBody[j].mainImg
+            }
+
+            console.log("##################################################")
+            console.log(x)
+            console.log("##################################################")
+            let product = await this.productService.addPackProducts(productId, reqBody);
             return res.json(product);
         }
         catch(ex){

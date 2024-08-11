@@ -144,10 +144,43 @@ export default class ProductService implements IProductService {
             throw new ValidationException("Product not a Pack");
         }
         // add product to pack
+        console.log("-----------------------------------------------------")
+        console.log({PRODUCTIMG: createPackProduct.mainImg, });
+        console.log("-----------------------------------------------------")
+
+        if(createPackProduct.mainImg){
+            let uploadedImage = await this.fileService.uploadFile(createPackProduct.mainImg);
+            console.log({uploadedImage})
+            createPackProduct.mainImg = uploadedImage;
+        }
         let packProduct =  {...createPackProduct} as PackProduct;
         product.packProducts.push(packProduct);
         await this.productRepository.updateByIdAsync(productId, {packProducts: product.packProducts})
         return this.convertProductToProductResponse(await this.productRepository.getByIdAsync(productId));
+        // save
+    }
+
+    addPackProducts = async (productId: Types.ObjectId | string, createPackProducts: CreatePackProduct[]): Promise<ProductResponse> => {
+        try{
+            // get product and ensure it is a pack.
+            productId = new Types.ObjectId(productId);
+            console.log({createPackProducts: createPackProducts.map(pred => pred.mainImg)})
+            this.eventTracer.say(`Adding multiple products of size ${createPackProducts.length}`);
+            this.eventTracer.request = createPackProducts;
+            let addedProducts: ProductResponse[] = []
+            for(let packProduct of createPackProducts){
+                let addedProduct = await this.addPackProduct(productId, packProduct);
+                addedProducts.push(addedProduct)
+            }
+
+            this.eventTracer.isSuccessWithResponseAndMessage(addedProducts)
+            return this.convertProductToProductResponse(await this.productRepository.getByIdAsync(productId));
+        }
+
+        catch(ex){
+            this.eventTracer.isExceptionWithMessage(`${ex}`);
+            throw ex;
+        }
         // save
     }
     
@@ -210,12 +243,10 @@ export default class ProductService implements IProductService {
         // add product to pack
         let packProducts = product.packProducts ?? [];
         for(let packProduct of packProducts){
-            console.log()
             if(packProduct._id.toString() === packProductId.toString()){
                 packProduct.isDeleted = true;
             }
         }
-        console.log({packProducts})
         await this.productRepository.updateByIdAsync(productId, {packProducts: packProducts})
         return this.convertProductToProductResponse(await this.productRepository.getByIdAsync(productId));
         // save
@@ -332,7 +363,6 @@ export default class ProductService implements IProductService {
          // get category
          this.eventTracer.say("Get Category Product");
          let category = await this.categoryService.getCategoryEnriched(categoryId, {subCategories: true, filters: true});
-         console.log({category})
          let cleanedFilters: {[key: string]: string[] | number[]} = {};
          this.eventTracer.say(`Cleaning filters`)
          for(let [filterName, filterValuesAsString] of Object.entries(filters)){

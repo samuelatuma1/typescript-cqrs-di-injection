@@ -126,7 +126,7 @@ export default class OrderService implements IOrderService{
                 total += item.qty * item.priceAtOrder
             }
             else{
-                // TODO: items have multiple currencies, convert or raise exception
+                //TODO: items have multiple currencies, convert or raise exception
             }
         }
 

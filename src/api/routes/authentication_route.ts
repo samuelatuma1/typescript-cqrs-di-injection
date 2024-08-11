@@ -14,4 +14,5 @@ authenticationRoute.post('/user', (req, res, next) => authController.createUser(
 authenticationRoute.post('/user/add-permissions', (req, res, next) => authController.addPermissionsToUser(req, res, next));
 authenticationRoute.post('/user/add-roles', (req, res, next) => authController.addRolesToUser(req, res, next));
 authenticationRoute.post('/user/user-permissions/:userId', (req: Request<{userId: string}>, res, next) => authController.getUserWithAllPermissions(req, res, next));
+authenticationRoute.post('/user/sign-in', (req, res, next) => authController.signInUser(req, res, next));
 export default authenticationRoute;

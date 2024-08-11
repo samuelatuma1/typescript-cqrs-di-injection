@@ -5,7 +5,7 @@ import CreatePermissionRequestDTO from "../../core/domain/authentication/dto/req
 import CreateRoleRequest from "../../core/domain/authentication/dto/requests/create_role_request";
 import AddPermissionRequest from "../../core/domain/authentication/dto/requests/add_permission_request";
 import RemovePermissionFromRoleRequest from "../../core/domain/authentication/dto/requests/remove_permission_from_role_request";
-import CreateUserRequest from "../../core/domain/authentication/dto/requests/create_user_request";
+import CreateUserRequest, { SignInUserRequest } from "../../core/domain/authentication/dto/requests/create_user_request";
 import AddPermissionToUserRequest from "../../core/domain/authentication/dto/requests/add_permission_to_user_request";
 import AddRolesToUserRequest from "../../core/domain/authentication/dto/requests/add_role_to_user_request";
 import { Types } from "mongoose";
@@ -99,6 +99,17 @@ export default class AuthenticationController extends BaseController{
     }
     catch(ex){
       next(ex)
+    }
+  }
+
+  signInUser = async (req: Request<{}, {}, SignInUserRequest>, res: Response, next: NextFunction) => {
+    try{
+      console.log(req.body)
+      let signedInUser = await this.userService.signInUser(req.body);
+      return res.json(signedInUser);
+    }
+    catch(ex){
+      next(ex);
     }
   }
 }

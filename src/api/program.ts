@@ -50,12 +50,15 @@ import { IIBillboardService } from '../core/application/contract/services/shop/b
 import BillboardService from '../core/application/services/shop/billboard_service';
 import { IISpecialOfferRepository } from '../core/application/contract/data_access/shop/special_offer_repository';
 import SpecialOfferRepository from '../core/infrastructure/persistence/data_access/shop/special_offer_repository';
+import { IIJwtService } from '../core/application/contract/services/authentication/jwt_service';
+import JwtService from '../core/infrastructure/services/files/jwt_service';
 
 dotenv.config();
 
 let env = process.env;
 var  serviceConfig : IServiceConfig = {
-  hashkey: env.hashkey ?? ''
+  hashkey: env.hashkey ?? '',
+  jwtsecret: env.jwtsecret ?? ''
 }
 
 var cloudinaryConfig : ICloudinaryConfig = {
@@ -160,6 +163,10 @@ container.register(IICloudinaryConfig, {
 
 container.register(IIFileService, {
   useClass: CloudinaryService
+})
+
+container.register(IIJwtService, {
+  useClass: JwtService
 })
 
 
