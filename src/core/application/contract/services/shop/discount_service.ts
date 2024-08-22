@@ -11,6 +11,7 @@ export default interface IDiscountService{
     addDiscountsToSpecialOffer (specialOfferId: Types.ObjectId | string, discountIds: Types.ObjectId[] | string[]): Promise<Discount[]>
     getDiscountsInSpecialOffer (specialOfferId: Types.ObjectId | string): Promise<Discount[]>
     getActiveSpecialOffers(includeDiscounts?: boolean): Promise<SpecialOffer[]>
+    getSpecialOffer(specialOfferId: Types.ObjectId | string): Promise<SpecialOffer>
 }
 
 export const IIDiscountService = "IDiscountService";

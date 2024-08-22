@@ -18,7 +18,7 @@ var base_entity_1 = require("../../common/entity/base_entity");
 var Category = /** @class */ (function (_super) {
     __extends(Category, _super);
     function Category(init) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         var _this = this;
         var id = new mongoose_1.Types.ObjectId();
         _this = _super.call(this, id) || this;
@@ -34,6 +34,7 @@ var Category = /** @class */ (function (_super) {
         _this.products = (_d = init.products) !== null && _d !== void 0 ? _d : [];
         _this.subCategories = [];
         _this.pagedProducts = null;
+        _this.isFeatured = (_e = init.isFeatured) !== null && _e !== void 0 ? _e : false;
         return _this;
     }
     return Category;

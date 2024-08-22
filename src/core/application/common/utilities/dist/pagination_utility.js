@@ -8,6 +8,9 @@ var PaginationUtility = /** @class */ (function () {
         if (page === void 0) { page = 0; }
         if (pageSize === void 0) { pageSize = 10; }
         // get totalCount first
+        if (page === 0) {
+            return new pagination_result_1.PaginationResponse({ currentPage: page, itemsPerPage: dataList.length, totalItems: dataList.length, totalPages: 1, items: dataList });
+        }
         var itemsToSkipCount = page === 0 ? 0 : (page - 1) * pageSize;
         var totalCount = dataList.length;
         var sliceEnd = page ? itemsToSkipCount + pageSize : totalCount;

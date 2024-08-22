@@ -4,6 +4,7 @@ import BaseEntity from "../../../../domain/common/entity/base_entity";
 import { RecordStatus } from "../../../../domain/common/enum/record_status";
 import DateUtility from "../../../../application/common/utilities/date_utility";
 import { PaginationResponse } from "../../../../domain/authentication/dto/results/pagination_result";
+import { SortOrder } from "../shop/product_repository";
 
 
 export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBaseRepository<TEntity,  TId>{
@@ -46,7 +47,7 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
         }
         return await dbQuery;
     }
-    getAsync = async (query: Partial<{[k in keyof TEntity]: any}> = {}, joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity[]> => {
+    getAsync = async (query: Partial<{[k in keyof TEntity]: any}> = {}, joins?: Partial<{[k in keyof TEntity]: boolean}>, sort?: {[key: string]: SortOrder}): Promise<TEntity[]> => {
         if(!query.hasOwnProperty('recordStatus')){
             query.recordStatus = { "$ne": RecordStatus.DELETED };
         }
@@ -57,6 +58,9 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
                     dbQuery.populate(key)
                 }
             }
+        }
+        if(sort){
+            dbQuery.sort(sort)
         }
         return await dbQuery;
     }
@@ -106,6 +110,29 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
         return 0;
     }
 
+    addToFieldsList = async (query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[]}>): Promise<number> => {
+        let addToSetQuery: Partial<{[key in keyof TEntity]: {$each: any[]}}> = {}
+        for(let [key, values] of Object.entries(fields)){
+            addToSetQuery[key as keyof TEntity] = {$each: values}
+            console.log({$each: values})
+        }
+        console.log({query, $addToSet: addToSetQuery})
+        let updatedResponse = await this._model.updateMany(query, {$addToSet: addToSetQuery})
+        console.log({updatedResponse})
+        return updatedResponse.modifiedCount;
+    }
+
+    removeFromFieldsList = async (query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[]}>): Promise<number> => {
+        let deleteFromFieldListQuery: Partial<{[key in keyof TEntity]: {$in: any[]}}> = {}
+        for(let [key, values] of Object.entries(fields)){
+            deleteFromFieldListQuery[key as keyof TEntity] = {$in: values}
+        }
+        console.log({$pull: deleteFromFieldListQuery})
+        let updatedResponse = await this._model.updateMany(query, {$pull: deleteFromFieldListQuery})
+        console.log(updatedResponse)
+        return updatedResponse.modifiedCount;
+    }
+
     deleteManyAsync = async (query: {[key in keyof Partial<TEntity>]: any}, soft: boolean = true): Promise<number> => {
         let deleteCount = 0;
         if(soft){
@@ -120,26 +147,28 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
         return deleteCount;
     }
 
-    getPagedAsync = async (query:  Partial<{[k in keyof TEntity]: any}>, lastItemId: TId | null, pageSize: number = 10) : Promise<TEntity[]>=> {
+    getPagedAsync = async (query:  Partial<{[k in keyof TEntity]: any}>, lastItemId: TId | null, pageSize: number = 10, sort?: {[key: string]: any}) : Promise<TEntity[]>=> {
         let queryData:  Record<string, any> = Object.fromEntries(Object.entries(query));
         
         if (lastItemId != null) {
             queryData._id = { $gt: lastItemId };
         }
-        const result = await this._model.find(queryData).sort({ _id: 1 }).limit(pageSize);
+        sort = { ...sort, _id: 1}
+        const result = await this._model.find(queryData).sort(sort).limit(pageSize);
         return result;
     }
 
     toPagedAsync = async (query: Partial<{[k in keyof TEntity]: any}>, page: number = 1, pageSize: number = 10, sort: {[k: string]: any} = {_id: -1} ): Promise<PaginationResponse<TEntity>> => {
-        const itemsToSkipCount = (page - 1 ) * pageSize
+        const itemsToSkipCount = (page === 0 ? 0 : (page - 1 )) * pageSize
+        let paginatedItemsAggregate = page === 0 ? [] : [
+            { $skip: itemsToSkipCount },
+            { $limit: pageSize },
+          ]
         const result = await this._model.aggregate([
             { $match: query }, // Match your query
             { $sort: sort }, // Sort as needed
             { $facet: { // Use $facet to run multiple pipelines within a single stage
-              paginatedItems: [
-                { $skip: itemsToSkipCount },
-                { $limit: pageSize },
-              ],
+              paginatedItems: paginatedItemsAggregate,
               totalCount: [
                 { $count: 'count' },
               ],
@@ -148,9 +177,9 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
           
         const totalCount = result[0].totalCount[0] ? result[0].totalCount[0].count : 0;
         const paginatedItems: TEntity[] = result[0]?.paginatedItems ?? [];
-        const totalPages = Math.floor(totalCount / pageSize) + ((totalCount % pageSize == 0) ? 0 : 1);
+        const totalPages = page === 0 ? 1 : Math.floor(totalCount / pageSize) + ((totalCount % pageSize == 0) ? 0 : 1);
 
-        return new PaginationResponse<TEntity>(page, pageSize, totalCount, totalPages, paginatedItems);
+        return new PaginationResponse<TEntity>(page, page === 0 ? totalCount : pageSize, totalCount, totalPages, paginatedItems);
     }
 
     private convertToEntity = (entity: TEntity): TEntity => {

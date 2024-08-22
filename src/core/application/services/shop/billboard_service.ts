@@ -110,9 +110,9 @@ export default class BillboardService implements IBillboardService{
 
     public search = async (searchBillboardRequest: SearchBillboardRequest) : Promise<Billboard[]> => {
         const cleanedSearch = ObjectUtility.removeNullOrUndefinedValuesFromObject(searchBillboardRequest);
-        const nextedSearch: {[key in keyof Partial<Billboard>]: object} = {};
+        const nestedSearch: {[key in keyof Partial<Billboard>]: object} = {};
         if(cleanedSearch.desc){ // case insensitive desc search
-            nextedSearch.desc = { $regex: cleanedSearch.desc, $options: "i"}
+            nestedSearch.desc = { $regex: cleanedSearch.desc, $options: "i"}
         }
         if(Object.hasOwn(cleanedSearch, 'isActive')){
             if(typeof(cleanedSearch.isActive) === "boolean" ){
@@ -130,7 +130,7 @@ export default class BillboardService implements IBillboardService{
                 }
             }
         }
-        let query = {...cleanedSearch, ...nextedSearch}
+        let query = {...cleanedSearch, ...nestedSearch}
         console.log({query})
         return await this.billboardRepository.getAsync(query)
     }

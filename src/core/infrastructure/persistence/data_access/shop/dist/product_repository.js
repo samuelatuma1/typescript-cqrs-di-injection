@@ -19,9 +19,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 exports.__esModule = true;
+exports.SortOrder = void 0;
 var tsyringe_1 = require("tsyringe");
 var base_repository_1 = require("../common/base_repository");
 var product_config_1 = require("../../entity_configuration/shop/product_config");
+var SortOrder;
+(function (SortOrder) {
+    SortOrder["desc"] = "desc";
+    SortOrder["asc"] = "asc";
+})(SortOrder = exports.SortOrder || (exports.SortOrder = {}));
 var ProductRepository = /** @class */ (function (_super) {
     __extends(ProductRepository, _super);
     function ProductRepository() {

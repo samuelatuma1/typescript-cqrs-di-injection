@@ -13,6 +13,7 @@ import Order from "../../../domain/shop/entity/order";
 import OrderItem from "../../../domain/shop/entity/order_item";
 import { OrderStatus } from "../../../domain/shop/enum/order_status";
 import IOrderRepository, { IIOrderRepository } from "../../../application/contract/data_access/shop/order_repository";
+import { ItemStatus } from "../../../domain/shop/enum/item_status";
 
 
 @injectable()
@@ -97,8 +98,7 @@ export default class OrderService implements IOrderService{
                 userCart = await this.cartRepository.addAsync(cart);
             }
 
-            let mergedCartItems = await this.mergeCart(createCartRequest.cartItems, userCart.cartItems);
-            userCart.cartItems = mergedCartItems;
+            let mergedCartItems = await this.mergeCartWithUptoDateData(createCartRequest.cartItems, userCart.cartItems);
             let {total, currency} = this.getTotal(mergedCartItems);
 
             userCart.totalAmount = total;
@@ -113,26 +113,27 @@ export default class OrderService implements IOrderService{
             throw ex;
         }
     }
-
-    public getTotal = (items: {qty: number, priceAtOrder: number, currency: string}[]): {total: number, currency: string} => {
+    public getTotal = (items: CartItem[] | OrderItem[]): {total: number, currency: string} => {
         let total = 0;
         if(!items.length){
             return {total, currency: ""};
         }
         let currency = items[0].currency;
         for(let item of items){
-            if(item.currency === currency){
+            if(item.status === ItemStatus.AVAILABLE){ // Only add if status is available
+                if(item.currency === currency){
 
-                total += item.qty * item.priceAtOrder
-            }
-            else{
-                //TODO: items have multiple currencies, convert or raise exception
+                    total += item.qty * item.priceAtOrder
+                }
+                else{
+                    //TODO: items have multiple currencies, convert or raise exception
+                }
             }
         }
 
         return {total, currency}
     }
-    public mergeCart = async (createCartItems: CreateCartItemRequest[], cartItems: CartItem[]): Promise<CartItem[]> => {
+    public mergeCartWithUptoDateData = async (createCartItems: CreateCartItemRequest[], cartItems: CartItem[]): Promise<CartItem[]> => {
         // get products from 
         let createCartItemsProductIdDict: {[key: string]: CreateCartItemRequest}= {};
         let cartItemsProductIdDict: {[key: string]: CartItem}= {};
@@ -168,28 +169,10 @@ export default class OrderService implements IOrderService{
             }
         }
         // get all products in createCartitems dict
-        const createCartItemsProductIds: Types.ObjectId[] = Object.keys(createCartItemsProductIdDict).map(key => new Types.ObjectId(key))
-        const cartItemsProductIds: Types.ObjectId[] = Object.keys(cartItemsProductIdDict).map(key => new Types.ObjectId(key))
-        
-        let productResponsesForCreateCartItems = await this.productService.getProductsWithDiscountedPriceByIds(createCartItemsProductIds);
-        let productResponsesForCartItems = await this.productService.getProductsWithDiscountedPriceByIds(cartItemsProductIds);
+        let createCartItemsCleaned = Object.values(createCartItemsProductIdDict);
+        let cartItemsCleaned = Object.values(cartItemsProductIdDict);
 
-        console.log({createCartItemsProductIds, cartItemsProductIds})
-        
-        let mergedProducts: ProductResponse[] = [...productResponsesForCartItems, ...productResponsesForCreateCartItems]
-        let mergedCartItemCreateCartItemDict : {[x: string]: CreateCartItemRequest | CartItem }= {...cartItemsProductIdDict, ...createCartItemsProductIdDict}
-        console.log({createCartItemsProductIdDict, cartItemsProductIdDict, mergedCartItemCreateCartItemDict, mergedProducts});
-        let mergedCartItems: CartItem[] = mergedProducts.map(product => {
-            // ensure cart items available products is not more than is available in inventory
-            return new CartItem({
-                product: product._id,
-                qty: mergedCartItemCreateCartItemDict[product._id.toString()].qty <= product.inventory.qtyAvailable ? mergedCartItemCreateCartItemDict[product._id.toString()].qty: product.inventory.qtyAvailable,
-                priceAtOrder: product.discountedPrice,
-                currency: product.currency
-            });
-        })
-
-        return mergedCartItems;
+        return  await this.productService.setProductsAvailabilityPriceAndCurrencyForCartItems([...createCartItemsCleaned, ...cartItemsCleaned]);;
     }
 
     

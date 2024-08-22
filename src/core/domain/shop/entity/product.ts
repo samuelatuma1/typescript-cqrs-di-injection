@@ -8,6 +8,7 @@ import { ProductInventory } from "./product_inventory";
 import { Currency } from "../../../domain/common/enum/currency";
 import ProductExtra from "./product_extra";
 import Discount from "./discount";
+import Catalogue from "./catalogue";
 
 export interface ProductInit {
      name : string;
@@ -23,6 +24,7 @@ export interface ProductInit {
      discounts?:  Discount[] | Types.ObjectId[];
     isPack?: boolean; 
     packProducts?: PackProduct[]
+    brandId?: Types.ObjectId | null
 }
 
 export class PackProduct{
@@ -38,19 +40,21 @@ export class PackProduct{
 export default class Product extends BaseEntity<Types.ObjectId> {
     public name : string;
     public desc: string;
-    public mainImg: UploadFile | null ;
+    public mainImg: UploadFile | null;
     public otherMedia: UploadFile[];
     public inventory: ProductInventory;
     public price: number;
     public currency: Currency | string;
-    public filters: Map<string, FilterForProduct> // key is the filterId as string
+    public filters: Map<string, FilterForProduct>; // key is the filterId as string
     public categories: Category[] | Types.ObjectId[];
     public reviews: Review[] | Types.ObjectId[] = [];
     public extras: ProductExtra[];
     public variants: Variant[] = [];
     public discounts: Discount[] | Types.ObjectId[] = []
-    public isPack: boolean = false; 
+    public isPack: boolean = false;
     public packProducts?: PackProduct[];
+    public catalogues: Catalogue[] | Types.ObjectId[];
+    public brandId?: Types.ObjectId | null;
     public constructor(init: ProductInit){
         const id = new Types.ObjectId();
         super(id);
@@ -68,6 +72,7 @@ export default class Product extends BaseEntity<Types.ObjectId> {
         this.discounts = init.discounts;
         this.isPack = init.isPack ?? false;
         this.packProducts = init.packProducts ?? [];
+        this.brandId = init.brandId ?? null;
     }
 
 }

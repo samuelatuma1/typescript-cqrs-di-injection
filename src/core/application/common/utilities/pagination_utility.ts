@@ -3,6 +3,9 @@ import { PaginationResponse } from "../../../domain/authentication/dto/results/p
 export default class PaginationUtility {
     static paginateData<T>(dataList: T[], page: number = 0, pageSize: number = 10): PaginationResponse<T>{
         // get totalCount first
+        if(page === 0){
+            return new PaginationResponse<T>({currentPage: page, itemsPerPage: dataList.length, totalItems: dataList.length, totalPages: 1, items: dataList})
+        }
         const itemsToSkipCount = page === 0 ? 0 : (page - 1 ) * pageSize;
         
           

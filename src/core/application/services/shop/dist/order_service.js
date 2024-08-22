@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -74,6 +63,7 @@ var order_1 = require("../../../domain/shop/entity/order");
 var order_item_1 = require("../../../domain/shop/entity/order_item");
 var order_status_1 = require("../../../domain/shop/enum/order_status");
 var order_repository_1 = require("../../../application/contract/data_access/shop/order_repository");
+var item_status_1 = require("../../../domain/shop/enum/item_status");
 var OrderService = /** @class */ (function () {
     function OrderService(eventTracer, userService, cartRepository, orderRepository, productService) {
         var _this = this;
@@ -171,10 +161,9 @@ var OrderService = /** @class */ (function () {
                     case 3:
                         userCart = _b.sent();
                         _b.label = 4;
-                    case 4: return [4 /*yield*/, this.mergeCart(createCartRequest.cartItems, userCart.cartItems)];
+                    case 4: return [4 /*yield*/, this.mergeCartWithUptoDateData(createCartRequest.cartItems, userCart.cartItems)];
                     case 5:
                         mergedCartItems = _b.sent();
-                        userCart.cartItems = mergedCartItems;
                         _a = this.getTotal(mergedCartItems), total = _a.total, currency = _a.currency;
                         userCart.totalAmount = total;
                         userCart.currency = currency;
@@ -197,17 +186,19 @@ var OrderService = /** @class */ (function () {
             var currency = items[0].currency;
             for (var _i = 0, items_1 = items; _i < items_1.length; _i++) {
                 var item = items_1[_i];
-                if (item.currency === currency) {
-                    total += item.qty * item.priceAtOrder;
-                }
-                else {
-                    //TODO: items have multiple currencies, convert or raise exception
+                if (item.status === item_status_1.ItemStatus.AVAILABLE) { // Only add if status is available
+                    if (item.currency === currency) {
+                        total += item.qty * item.priceAtOrder;
+                    }
+                    else {
+                        //TODO: items have multiple currencies, convert or raise exception
+                    }
                 }
             }
             return { total: total, currency: currency };
         };
-        this.mergeCart = function (createCartItems, cartItems) { return __awaiter(_this, void 0, Promise, function () {
-            var createCartItemsProductIdDict, cartItemsProductIdDict, _i, createCartItems_1, cartItem, cartItemProductIdString, _a, cartItems_1, cartItem, cartItemProductIdString, createItemProductKey, createCartItemsProductIds, cartItemsProductIds, productResponsesForCreateCartItems, productResponsesForCartItems, mergedProducts, mergedCartItemCreateCartItemDict, mergedCartItems;
+        this.mergeCartWithUptoDateData = function (createCartItems, cartItems) { return __awaiter(_this, void 0, Promise, function () {
+            var createCartItemsProductIdDict, cartItemsProductIdDict, _i, createCartItems_1, cartItem, cartItemProductIdString, _a, cartItems_1, cartItem, cartItemProductIdString, createItemProductKey, createCartItemsCleaned, cartItemsCleaned;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -242,28 +233,10 @@ var OrderService = /** @class */ (function () {
                                 delete cartItemsProductIdDict[createItemProductKey]; // delete from cartItems if item features in create Items List
                             }
                         }
-                        createCartItemsProductIds = Object.keys(createCartItemsProductIdDict).map(function (key) { return new mongoose_1.Types.ObjectId(key); });
-                        cartItemsProductIds = Object.keys(cartItemsProductIdDict).map(function (key) { return new mongoose_1.Types.ObjectId(key); });
-                        return [4 /*yield*/, this.productService.getProductsWithDiscountedPriceByIds(createCartItemsProductIds)];
-                    case 1:
-                        productResponsesForCreateCartItems = _b.sent();
-                        return [4 /*yield*/, this.productService.getProductsWithDiscountedPriceByIds(cartItemsProductIds)];
-                    case 2:
-                        productResponsesForCartItems = _b.sent();
-                        console.log({ createCartItemsProductIds: createCartItemsProductIds, cartItemsProductIds: cartItemsProductIds });
-                        mergedProducts = __spreadArrays(productResponsesForCartItems, productResponsesForCreateCartItems);
-                        mergedCartItemCreateCartItemDict = __assign(__assign({}, cartItemsProductIdDict), createCartItemsProductIdDict);
-                        console.log({ createCartItemsProductIdDict: createCartItemsProductIdDict, cartItemsProductIdDict: cartItemsProductIdDict, mergedCartItemCreateCartItemDict: mergedCartItemCreateCartItemDict, mergedProducts: mergedProducts });
-                        mergedCartItems = mergedProducts.map(function (product) {
-                            // ensure cart items available products is not more than is available in inventory
-                            return new cart_1.CartItem({
-                                product: product._id,
-                                qty: mergedCartItemCreateCartItemDict[product._id.toString()].qty <= product.inventory.qtyAvailable ? mergedCartItemCreateCartItemDict[product._id.toString()].qty : product.inventory.qtyAvailable,
-                                priceAtOrder: product.discountedPrice,
-                                currency: product.currency
-                            });
-                        });
-                        return [2 /*return*/, mergedCartItems];
+                        createCartItemsCleaned = Object.values(createCartItemsProductIdDict);
+                        cartItemsCleaned = Object.values(cartItemsProductIdDict);
+                        return [4 /*yield*/, this.productService.setProductsAvailabilityPriceAndCurrencyForCartItems(__spreadArrays(createCartItemsCleaned, cartItemsCleaned))];
+                    case 1: return [2 /*return*/, _b.sent()];
                 }
             });
         }); };

@@ -172,7 +172,7 @@ var ProductController = /** @class */ (function (_super) {
             });
         }); };
         _this.addPackProducts = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var productId, reqBody, imgs, i, img, x, j, productImg, product, ex_6;
+            var productId, reqBody, imgs, i, img, j, productImg, product, ex_6;
             var _a, _b, _c;
             return __generator(this, function (_d) {
                 switch (_d.label) {
@@ -187,17 +187,10 @@ var ProductController = /** @class */ (function (_super) {
                                 imgs.push(img[0]);
                             }
                         }
-                        x = {};
-                        console.log("##################################################");
-                        console.log("##################################################");
                         for (j = 0; j < ((_b = reqBody.length) !== null && _b !== void 0 ? _b : 0); j++) {
                             productImg = (_c = imgs[j]) !== null && _c !== void 0 ? _c : null;
                             reqBody[j].mainImg = productImg;
-                            x[j] = reqBody[j].mainImg;
                         }
-                        console.log("##################################################");
-                        console.log(x);
-                        console.log("##################################################");
                         return [4 /*yield*/, this.productService.addPackProducts(productId, reqBody)];
                     case 1:
                         product = _d.sent();
@@ -251,6 +244,32 @@ var ProductController = /** @class */ (function (_super) {
                     case 2:
                         ex_8 = _b.sent();
                         next(ex_8);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.bestSellers = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var query, page, pageSize, response, ex_9;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        _c.trys.push([0, 2, , 3]);
+                        query = req.query;
+                        console.log("Here");
+                        page = (_a = query.page) !== null && _a !== void 0 ? _a : 0;
+                        pageSize = (_b = query.pageSize) !== null && _b !== void 0 ? _b : 0;
+                        req.query.page = parseInt(page.toString());
+                        req.query.pageSize = parseInt(pageSize.toString());
+                        console.log({ query: req.query });
+                        return [4 /*yield*/, this.productService.bestSellers(req.query)];
+                    case 1:
+                        response = _c.sent();
+                        return [2 /*return*/, res.json(response)];
+                    case 2:
+                        ex_9 = _c.sent();
+                        next(ex_9);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }

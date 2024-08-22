@@ -18,7 +18,8 @@ var categorgySchema = new Schema<Category>({
     filters: {type: [FilterSchema]},
     products: {type: [ProductSchema]},
     subCategories: {type: []},
-    pagedProducts: {type: Schema.Types.Mixed}
+    pagedProducts: {type: Schema.Types.Mixed},
+    isFeatured: {type: Boolean, default: false}
 });
 
 export const categoryModel  = model<Category>("Category", categorgySchema);

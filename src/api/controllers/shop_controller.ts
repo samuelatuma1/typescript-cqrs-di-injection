@@ -12,6 +12,12 @@ import IOrderService, { IIOrderService } from "../../core/application/contract/s
 import { CreateCartRequest } from "../../core/domain/shop/dto/requests/cart_request";
 import { IBillboardService, IIBillboardService } from "../../core/application/contract/services/shop/billboard_service";
 import { CreateBillboardRequest, SearchBillboardRequest, UpdateBillboardRequest } from "../../core/domain/shop/dto/requests/billboard_requests";
+import { ApplyProductToDiscount } from "../../core/domain/shop/dto/requests/product_requests";
+import ICatalogueService, { IICatalogueService } from "../../core/application/contract/services/shop/catalogue_service";
+import { AddProductsToCatalogueRequest, CreateCatalogueRequest, QueryCatalogue, RemoveProductsToCatalogueRequest, UpdateCatalogueRequest } from "../../core/domain/shop/dto/requests/catalogue_requests";
+import IBrandLogic, { IIBrandLogic } from "../../core/application/contract/logic/shop/brand_logic";
+import { CreateBrandRequest } from "../../core/domain/shop/dto/requests/brand_requests";
+import { ICategoryLogic, IICategoryLogic } from "../../core/application/contract/logic/shop/category_logic";
 
 @injectable()
 export default class ShopController extends BaseController{
@@ -21,7 +27,10 @@ export default class ShopController extends BaseController{
     @inject(IIProductService) private readonly productService: IProductService,
     @inject(IIDiscountService) private readonly discountService: IDiscountService,
     @inject(IIOrderService) private readonly orderService: IOrderService,
-    @inject(IIBillboardService) private readonly billboardService: IBillboardService
+    @inject(IIBillboardService) private readonly billboardService: IBillboardService,
+    @inject(IICatalogueService) private readonly catalogueService: ICatalogueService,
+    @inject(IIBrandLogic) private readonly brandLogic: IBrandLogic,
+    @inject(IICategoryLogic) private readonly cateoryLogic: ICategoryLogic,
   ) {
     super();
   }
@@ -78,7 +87,9 @@ export default class ShopController extends BaseController{
     try{
       let categoryId = new Types.ObjectId(req.params.categoryId);
       let filters = req.query as { [key: string]: string };
-      const enrichedCategory = await this.productService.getCategoryEnriched(categoryId, filters);
+      let page = parseInt((filters.page ?? 0 ).toString())
+      let pageSize = parseInt((filters.pageSize ?? 10 ).toString())
+      const enrichedCategory = await this.cateoryLogic.getCategoryEnriched(categoryId, filters, page, pageSize);
       return res.json(enrichedCategory);
     }
     catch(ex){
@@ -129,6 +140,17 @@ export default class ShopController extends BaseController{
     }
   }
 
+  addProductsWithDiscountToSpecialOffer = async (req: Request<{specialOfferId: Types.ObjectId}, {}, ApplyProductToDiscount[]>, res: Response, next: NextFunction) => {
+    try{
+      const specialOfferId = new Types.ObjectId(req.params.specialOfferId);
+      let specialOfferDiscounts = await this.productService.addProductsWithDiscountToSpecialOffer(specialOfferId, req.body);
+      return res.json(specialOfferDiscounts);
+    }
+    catch(ex){
+
+    }
+  }
+
   getActiveSpecialOffers = async (req: Request<{}, {}, {}>, res: Response, next: NextFunction) => {
     try{
       const activeSpecialOffers = await this.discountService.getActiveSpecialOffers(true);
@@ -162,6 +184,8 @@ export default class ShopController extends BaseController{
       next(ex);
     }
   }
+
+  
 
   updateBillboard = async (req: Request<{billboardId: Types.ObjectId}, {}, UpdateBillboardRequest>, res: Response, next: NextFunction) => {
     try{
@@ -217,7 +241,100 @@ export default class ShopController extends BaseController{
     }
   }
 
+  createCatalogue = async (req: Request, res: Response, next: NextFunction) => {
+    try{
+      let reqBody = SerializationUtility.deserializeJson<CreateCatalogueRequest>(req.body.data);
+      reqBody.mainImg = this.convertReqFilesToUploadFiles(req as unknown as Request, `mainImg`)[0] ?? null;
+      let createdCatalogue = await this.catalogueService.createCatalogue(reqBody);
+      return res.json(createdCatalogue);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
 
+  updateCatalogue = async (req: Request<{catalogueId: Types.ObjectId | string}>, res: Response, next: NextFunction) => {
+    try{
+      let reqBody = SerializationUtility.deserializeJson<UpdateCatalogueRequest>(req.body.data);
+      reqBody.mainImg = (this.convertReqFilesToUploadFiles(req as unknown as Request, `mainImg`) ?? [])[0] ?? null;
+      console.log('Imela')
+      let updatedCatalogue = await this.catalogueService.updateCatalogue(req.params.catalogueId, reqBody);
+      return res.json(updatedCatalogue);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
 
+  featureCatalogues = async (req: Request<{}, {}, {catalogueIds:  Types.ObjectId[], feature: boolean}>, res: Response, next: NextFunction) => {
+    try{
+      console.log({b: req.body})
+      let updatedCatalogue = await this.catalogueService.featureCatalogues(req.body.catalogueIds, req.body.feature);
+      return res.json(updatedCatalogue);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+  
+  getCatalogue = async (req: Request<{}, {}, {}, QueryCatalogue>, res: Response, next: NextFunction) => {
+    try{
+      let query: QueryCatalogue = req.query
+      if(query.isFeatured){
+        query.isFeatured = req.query.isFeatured.toString().toLowerCase() === "true" ? true : false;
+      }
+      console.log({query})
+      let response = await this.catalogueService.getCatalogues(query);
+      return res.json(response);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  addProductsToCatalogue = async (req: Request<{}, {}, AddProductsToCatalogueRequest>, res: Response, next: NextFunction) => {
+    try{
+      let updatedCatalogue = await this.catalogueService.addProductsToCatalogue(req.body);
+      return res.json(updatedCatalogue);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  removeProductsFromCatalogue = async (req: Request<{}, {}, RemoveProductsToCatalogueRequest>, res: Response, next: NextFunction) => {
+    try{
+      let updatedCatalogue = await this.catalogueService.removeProductsFromCatalogue(req.body);
+      return res.json(updatedCatalogue);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  createBrand = async (req: Request, res: Response, next: NextFunction) => {
+    try{
+      let reqBody = SerializationUtility.deserializeJson<CreateBrandRequest>(req.body.data);
+      reqBody.mainImg = this.convertReqFilesToUploadFiles(req as unknown as Request, "mainImg")[0] ?? null;
+      
+      let createdBrand = await this.brandLogic.createBrand(reqBody);
+      return res.json(createdBrand);
+    }
+    catch(ex){
+      next(ex);
+    }
+  }
+
+  addProductsToBrand = async (req: Request<{brandId: Types.ObjectId}, {}, Types.ObjectId[]>, res: Response, next: NextFunction) => {
+    try{
+      let brandId = req.params.brandId
+      console.log("Iscabas")
+      let addedProducts = await this.brandLogic.addProductsToBrand(brandId, req.body);
+      return res.json(addedProducts);
+    }
+    catch(ex){
+      next(ex)
+    }
+  }
 
 }

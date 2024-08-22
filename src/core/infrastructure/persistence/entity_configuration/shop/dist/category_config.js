@@ -17,6 +17,7 @@ var categorgySchema = new mongoose_1.Schema({
     filters: { type: [filter_config_1.FilterSchema] },
     products: { type: [product_config_1.ProductSchema] },
     subCategories: { type: [] },
-    pagedProducts: { type: mongoose_1.Schema.Types.Mixed }
+    pagedProducts: { type: mongoose_1.Schema.Types.Mixed },
+    isFeatured: { type: Boolean, "default": false }
 });
 exports.categoryModel = mongoose_1.model("Category", categorgySchema);

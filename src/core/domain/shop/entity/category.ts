@@ -13,6 +13,7 @@ interface CategoryInit {
     parentCategory?: Types.ObjectId | null | string;
     filters?: Filter[];
     products?: Product[]; //TODO: Replace with actual product
+    isFeatured?: boolean
 }
 
 export default class Category extends BaseEntity<Types.ObjectId>{
@@ -25,7 +26,7 @@ export default class Category extends BaseEntity<Types.ObjectId>{
     filters: Filter[];
     products:Product[]; //TODO: Replace with actual product
     public pagedProducts: PaginationResponse<Product> | null;
-
+    public isFeatured: boolean 
     constructor(init: CategoryInit);
     public constructor(init: CategoryInit){
         const id = new Types.ObjectId();
@@ -39,5 +40,6 @@ export default class Category extends BaseEntity<Types.ObjectId>{
         this.products = init.products ?? [];
         this.subCategories = [];
         this.pagedProducts = null;
+        this.isFeatured = init.isFeatured ?? false;
     }
 }

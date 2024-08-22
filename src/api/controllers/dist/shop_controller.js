@@ -67,15 +67,21 @@ var product_service_1 = require("../../core/application/contract/services/shop/p
 var discount_service_1 = require("../../core/application/contract/services/shop/discount_service");
 var order_service_1 = require("../../core/application/contract/services/shop/order_service");
 var billboard_service_1 = require("../../core/application/contract/services/shop/billboard_service");
+var catalogue_service_1 = require("../../core/application/contract/services/shop/catalogue_service");
+var brand_logic_1 = require("../../core/application/contract/logic/shop/brand_logic");
+var category_logic_1 = require("../../core/application/contract/logic/shop/category_logic");
 var ShopController = /** @class */ (function (_super) {
     __extends(ShopController, _super);
-    function ShopController(categoryService, productService, discountService, orderService, billboardService) {
+    function ShopController(categoryService, productService, discountService, orderService, billboardService, catalogueService, brandLogic, cateoryLogic) {
         var _this = _super.call(this) || this;
         _this.categoryService = categoryService;
         _this.productService = productService;
         _this.discountService = discountService;
         _this.orderService = orderService;
         _this.billboardService = billboardService;
+        _this.catalogueService = catalogueService;
+        _this.brandLogic = brandLogic;
+        _this.cateoryLogic = cateoryLogic;
         _this.createCategory = function (req, res, next) { return __awaiter(_this, void 0, Promise, function () {
             var data, categoryDTO, createdCategory, ex_1;
             return __generator(this, function (_a) {
@@ -158,19 +164,22 @@ var ShopController = /** @class */ (function (_super) {
             });
         }); };
         _this.getCategory = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var categoryId, filters, enrichedCategory, ex_5;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var categoryId, filters, page, pageSize, enrichedCategory, ex_5;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        _a.trys.push([0, 2, , 3]);
+                        _c.trys.push([0, 2, , 3]);
                         categoryId = new mongoose_1.Types.ObjectId(req.params.categoryId);
                         filters = req.query;
-                        return [4 /*yield*/, this.productService.getCategoryEnriched(categoryId, filters)];
+                        page = parseInt(((_a = filters.page) !== null && _a !== void 0 ? _a : 0).toString());
+                        pageSize = parseInt(((_b = filters.pageSize) !== null && _b !== void 0 ? _b : 10).toString());
+                        return [4 /*yield*/, this.cateoryLogic.getCategoryEnriched(categoryId, filters, page, pageSize)];
                     case 1:
-                        enrichedCategory = _a.sent();
+                        enrichedCategory = _c.sent();
                         return [2 /*return*/, res.json(enrichedCategory)];
                     case 2:
-                        ex_5 = _a.sent();
+                        ex_5 = _c.sent();
                         next(ex_5);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
@@ -253,8 +262,26 @@ var ShopController = /** @class */ (function (_super) {
                 }
             });
         }); };
+        _this.addProductsWithDiscountToSpecialOffer = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var specialOfferId, specialOfferDiscounts, ex_10;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        specialOfferId = new mongoose_1.Types.ObjectId(req.params.specialOfferId);
+                        return [4 /*yield*/, this.productService.addProductsWithDiscountToSpecialOffer(specialOfferId, req.body)];
+                    case 1:
+                        specialOfferDiscounts = _a.sent();
+                        return [2 /*return*/, res.json(specialOfferDiscounts)];
+                    case 2:
+                        ex_10 = _a.sent();
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
         _this.getActiveSpecialOffers = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var activeSpecialOffers, ex_10;
+            var activeSpecialOffers, ex_11;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -264,8 +291,8 @@ var ShopController = /** @class */ (function (_super) {
                         activeSpecialOffers = _a.sent();
                         return [2 /*return*/, res.json(activeSpecialOffers)];
                     case 2:
-                        ex_10 = _a.sent();
-                        next(ex_10);
+                        ex_11 = _a.sent();
+                        next(ex_11);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }
@@ -273,7 +300,7 @@ var ShopController = /** @class */ (function (_super) {
         }); };
         //createCart = async (createCartRequest: CreateCartRequest): Promise<Cart> 
         _this.createCart = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var userCart, ex_11;
+            var userCart, ex_12;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -283,15 +310,15 @@ var ShopController = /** @class */ (function (_super) {
                         userCart = _a.sent();
                         return [2 /*return*/, res.json(userCart)];
                     case 2:
-                        ex_11 = _a.sent();
-                        next(ex_11);
+                        ex_12 = _a.sent();
+                        next(ex_12);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }
             });
         }); };
         _this.createBillboard = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var reqBody, billBoard, ex_12;
+            var reqBody, billBoard, ex_13;
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
@@ -304,40 +331,21 @@ var ShopController = /** @class */ (function (_super) {
                         billBoard = _b.sent();
                         return [2 /*return*/, res.json(billBoard)];
                     case 2:
-                        ex_12 = _b.sent();
-                        next(ex_12);
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); };
-        _this.updateBillboard = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var billboardId, updatedBillboard, ex_13;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        billboardId = req.params.billboardId;
-                        return [4 /*yield*/, this.billboardService.updateBillBoard(billboardId, req.body)];
-                    case 1:
-                        updatedBillboard = _a.sent();
-                        return [2 /*return*/, res.json(updatedBillboard)];
-                    case 2:
-                        ex_13 = _a.sent();
+                        ex_13 = _b.sent();
                         next(ex_13);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }
             });
         }); };
-        _this.deleteBillboard = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+        _this.updateBillboard = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
             var billboardId, updatedBillboard, ex_14;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
                         billboardId = req.params.billboardId;
-                        return [4 /*yield*/, this.billboardService.deleteBillboard(billboardId)];
+                        return [4 /*yield*/, this.billboardService.updateBillBoard(billboardId, req.body)];
                     case 1:
                         updatedBillboard = _a.sent();
                         return [2 /*return*/, res.json(updatedBillboard)];
@@ -349,8 +357,27 @@ var ShopController = /** @class */ (function (_super) {
                 }
             });
         }); };
+        _this.deleteBillboard = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var billboardId, updatedBillboard, ex_15;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        billboardId = req.params.billboardId;
+                        return [4 /*yield*/, this.billboardService.deleteBillboard(billboardId)];
+                    case 1:
+                        updatedBillboard = _a.sent();
+                        return [2 /*return*/, res.json(updatedBillboard)];
+                    case 2:
+                        ex_15 = _a.sent();
+                        next(ex_15);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
         _this.getActiveBillboards = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var activeBillboads, ex_15;
+            var activeBillboads, ex_16;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -360,15 +387,15 @@ var ShopController = /** @class */ (function (_super) {
                         activeBillboads = _a.sent();
                         return [2 /*return*/, res.json(activeBillboads)];
                     case 2:
-                        ex_15 = _a.sent();
-                        next(ex_15);
+                        ex_16 = _a.sent();
+                        next(ex_16);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }
             });
         }); };
         _this.getBillboard = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var billboardId, billboard, ex_16;
+            var billboardId, billboard, ex_17;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -379,15 +406,15 @@ var ShopController = /** @class */ (function (_super) {
                         billboard = _a.sent();
                         return [2 /*return*/, res.json(billboard)];
                     case 2:
-                        ex_16 = _a.sent();
-                        next(ex_16);
+                        ex_17 = _a.sent();
+                        next(ex_17);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }
             });
         }); };
         _this.searchBillboards = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-            var billboards, ex_17;
+            var billboards, ex_18;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -397,8 +424,170 @@ var ShopController = /** @class */ (function (_super) {
                         billboards = _a.sent();
                         return [2 /*return*/, res.json(billboards)];
                     case 2:
-                        ex_17 = _a.sent();
-                        next(ex_17);
+                        ex_18 = _a.sent();
+                        next(ex_18);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.createCatalogue = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var reqBody, createdCatalogue, ex_19;
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 2, , 3]);
+                        reqBody = serialization_utility_1["default"].deserializeJson(req.body.data);
+                        reqBody.mainImg = (_a = this.convertReqFilesToUploadFiles(req, "mainImg")[0]) !== null && _a !== void 0 ? _a : null;
+                        return [4 /*yield*/, this.catalogueService.createCatalogue(reqBody)];
+                    case 1:
+                        createdCatalogue = _b.sent();
+                        return [2 /*return*/, res.json(createdCatalogue)];
+                    case 2:
+                        ex_19 = _b.sent();
+                        next(ex_19);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.updateCatalogue = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var reqBody, updatedCatalogue, ex_20;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        _c.trys.push([0, 2, , 3]);
+                        reqBody = serialization_utility_1["default"].deserializeJson(req.body.data);
+                        reqBody.mainImg = (_b = ((_a = this.convertReqFilesToUploadFiles(req, "mainImg")) !== null && _a !== void 0 ? _a : [])[0]) !== null && _b !== void 0 ? _b : null;
+                        console.log('Imela');
+                        return [4 /*yield*/, this.catalogueService.updateCatalogue(req.params.catalogueId, reqBody)];
+                    case 1:
+                        updatedCatalogue = _c.sent();
+                        return [2 /*return*/, res.json(updatedCatalogue)];
+                    case 2:
+                        ex_20 = _c.sent();
+                        next(ex_20);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.featureCatalogues = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var updatedCatalogue, ex_21;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        console.log({ b: req.body });
+                        return [4 /*yield*/, this.catalogueService.featureCatalogues(req.body.catalogueIds, req.body.feature)];
+                    case 1:
+                        updatedCatalogue = _a.sent();
+                        return [2 /*return*/, res.json(updatedCatalogue)];
+                    case 2:
+                        ex_21 = _a.sent();
+                        next(ex_21);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.getCatalogue = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var query, response, ex_22;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        query = req.query;
+                        if (query.isFeatured) {
+                            query.isFeatured = req.query.isFeatured.toString().toLowerCase() === "true" ? true : false;
+                        }
+                        console.log({ query: query });
+                        return [4 /*yield*/, this.catalogueService.getCatalogues(query)];
+                    case 1:
+                        response = _a.sent();
+                        return [2 /*return*/, res.json(response)];
+                    case 2:
+                        ex_22 = _a.sent();
+                        next(ex_22);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.addProductsToCatalogue = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var updatedCatalogue, ex_23;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, this.catalogueService.addProductsToCatalogue(req.body)];
+                    case 1:
+                        updatedCatalogue = _a.sent();
+                        return [2 /*return*/, res.json(updatedCatalogue)];
+                    case 2:
+                        ex_23 = _a.sent();
+                        next(ex_23);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.removeProductsFromCatalogue = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var updatedCatalogue, ex_24;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, this.catalogueService.removeProductsFromCatalogue(req.body)];
+                    case 1:
+                        updatedCatalogue = _a.sent();
+                        return [2 /*return*/, res.json(updatedCatalogue)];
+                    case 2:
+                        ex_24 = _a.sent();
+                        next(ex_24);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.createBrand = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var reqBody, createdBrand, ex_25;
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 2, , 3]);
+                        reqBody = serialization_utility_1["default"].deserializeJson(req.body.data);
+                        reqBody.mainImg = (_a = this.convertReqFilesToUploadFiles(req, "mainImg")[0]) !== null && _a !== void 0 ? _a : null;
+                        return [4 /*yield*/, this.brandLogic.createBrand(reqBody)];
+                    case 1:
+                        createdBrand = _b.sent();
+                        return [2 /*return*/, res.json(createdBrand)];
+                    case 2:
+                        ex_25 = _b.sent();
+                        next(ex_25);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        _this.addProductsToBrand = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var brandId, addedProducts, ex_26;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        brandId = req.params.brandId;
+                        console.log("Iscabas");
+                        return [4 /*yield*/, this.brandLogic.addProductsToBrand(brandId, req.body)];
+                    case 1:
+                        addedProducts = _a.sent();
+                        return [2 /*return*/, res.json(addedProducts)];
+                    case 2:
+                        ex_26 = _a.sent();
+                        next(ex_26);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }
@@ -412,7 +601,10 @@ var ShopController = /** @class */ (function (_super) {
         __param(1, tsyringe_1.inject(product_service_1.IIProductService)),
         __param(2, tsyringe_1.inject(discount_service_1.IIDiscountService)),
         __param(3, tsyringe_1.inject(order_service_1.IIOrderService)),
-        __param(4, tsyringe_1.inject(billboard_service_1.IIBillboardService))
+        __param(4, tsyringe_1.inject(billboard_service_1.IIBillboardService)),
+        __param(5, tsyringe_1.inject(catalogue_service_1.IICatalogueService)),
+        __param(6, tsyringe_1.inject(brand_logic_1.IIBrandLogic)),
+        __param(7, tsyringe_1.inject(category_logic_1.IICategoryLogic))
     ], ShopController);
     return ShopController;
 }(base_controller_1["default"]));

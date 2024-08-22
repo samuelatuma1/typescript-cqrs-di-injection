@@ -465,7 +465,6 @@ var UserService = /** @class */ (function () {
                         this.eventTracer.say("Saved user permissions " + userPermissions.length);
                         userPermissionIdsFromRoles_1 = [];
                         user.roles.forEach(function (role) {
-                            console.log({ role: role });
                             var permissionForRoles = [];
                             for (var _i = 0, _a = role.permissions; _i < _a.length; _i++) {
                                 var userPermissionId = _a[_i];
@@ -480,8 +479,7 @@ var UserService = /** @class */ (function () {
                         this.eventTracer.say("Getting user permissions from roles");
                         userPermissions = __spreadArrays(userPermissions, allUserRolesPermissions);
                         permissionNames = userPermissions.map(function (permission) { return permission.name; });
-                        this.eventTracer.say("All user permissions count: " + userPermissions.length + ".");
-                        this.eventTracer.say("All user roles count: " + user.roles.length + ".");
+                        this.eventTracer.say("All user permissions count: " + userPermissions.length + ".\nAll user roles count: " + user.roles.length + ".");
                         roleNames = user.roles.map(function (role) { return role.name; });
                         this.eventTracer.say("Getting access and refresh tokens");
                         accessTokenPayload = {

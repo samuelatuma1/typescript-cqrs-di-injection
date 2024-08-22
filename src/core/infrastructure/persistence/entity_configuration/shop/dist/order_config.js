@@ -6,7 +6,8 @@ var OrderItemSchema = new mongoose_1.Schema({
     product: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Product' },
     qty: { type: Number },
     priceAtOrder: { type: Number },
-    currency: { type: String }
+    currency: { type: String },
+    status: { type: String, "default": "" }
 });
 exports.OrderSchema = new mongoose_1.Schema({
     createdAt: { type: Date, required: true },

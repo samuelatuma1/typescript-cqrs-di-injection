@@ -1,4 +1,4 @@
-import { CreateFilterForProduct, CreatePackProduct, CreateProductRequest, UpdatePackProduct, UpdateProductRequest } from "../../../domain/shop/dto/requests/product_requests";
+import { ApplyProductToDiscount, BestSellersQuery, CreateFilterForProduct, CreatePackProduct, CreateProductRequest, UpdatePackProduct, UpdateProductRequest } from "../../../domain/shop/dto/requests/product_requests";
 import IProductService from "../../../application/contract/services/shop/product_service";
 import { inject, injectable } from "tsyringe";
 import IEventTracer, { IIEventTracer } from "../../../application/contract/observability/event_tracer";
@@ -14,13 +14,16 @@ import IProductRepository, { IIProductRepository } from "../../../application/co
 import IFileService, { IIFileService } from "../../../application/contract/services/files/file_service";
 import NotFoundException from "../../../application/common/exceptions/not_found_exception";
 import { ProductResponse } from "../../../domain/shop/dto/responses/product_response";
-import PaginationUtility from "../../../application/common/utilities/pagination_utility";
 import IDiscountService, { IIDiscountService } from "../../../application/contract/services/shop/discount_service";
 import Discount, { DiscountType } from "../../../domain/shop/entity/discount";
 import DateUtility from "../../../application/common/utilities/date_utility";
 import { Currency } from "../../../domain/common/enum/currency";
 import ValidationException from "../../../application/common/exceptions/validation_exception";
 import SerializationUtility from "../../../application/common/utilities/serialization_utility";
+import { PaginationResponse } from "../../../domain/authentication/dto/results/pagination_result";
+import { CartItem } from "../../../domain/shop/entity/cart";
+import { ItemStatus } from "../../../domain/shop/enum/item_status";
+import { CreateCartItemRequest } from "../../../domain/shop/dto/requests/cart_request";
 
 
 
@@ -79,6 +82,7 @@ export default class ProductService implements IProductService {
         return allCategoriesFiltersDict
     }
 
+    
     private validateAndSetFiltersForProduct = async (categoriesIds: Types.ObjectId[] | string[], filters: {
         [key: string]: CreateFilterForProduct | FilterForProduct}): Promise<Map<string, FilterForProduct>> => {
         let allCategoriesFiltersDict: {[key: string]: Filter} = await this.getAllCategoryFiltersForProduct(categoriesIds);
@@ -158,6 +162,10 @@ export default class ProductService implements IProductService {
         await this.productRepository.updateByIdAsync(productId, {packProducts: product.packProducts})
         return this.convertProductToProductResponse(await this.productRepository.getByIdAsync(productId));
         // save
+    }
+
+    getQuery = async (query: Partial<{[key in keyof Product]: any}>, options: {includeDiscounts?: boolean}) : Promise<Product[]> => {
+        return await this.productRepository.getAsync(query, {discounts: options.includeDiscounts ?? false});
     }
 
     addPackProducts = async (productId: Types.ObjectId | string, createPackProducts: CreatePackProduct[]): Promise<ProductResponse> => {
@@ -316,25 +324,46 @@ export default class ProductService implements IProductService {
         return productResponse
     }
 
-    private convertProductsToProductResponse = async (products: Product[], includeDiscountAndDiscountPrice: boolean = false): Promise<ProductResponse[]> => {
+    private convertProductToProductResponseAsync = async (product: Product, options: {includeDiscountAndDiscountPrice?: boolean}): Promise<ProductResponse> => {
+
+        let productResponse = new ProductResponse(product as ProductInit);
+        productResponse._id = product._id;
+        productResponse.packProducts = productResponse.packProducts?.filter(prod => !prod.isDeleted);
+        if(options.includeDiscountAndDiscountPrice ?? false) {
+            productResponse = await this.getDiscountedPriceAndAppliedDiscountsForProduct(productResponse);
+        }
+        return productResponse
+    }
+
+    public convertProductsToProductResponse = async (products: Product[], options?: {includeDiscountAndDiscountPrice: boolean}): Promise<ProductResponse[]> => {
         const productsResponses: ProductResponse[] = []
-        for(let product of products){
-            let productResponse = this.convertProductToProductResponse(product);
-            if(includeDiscountAndDiscountPrice) {
-                productResponse = await this.getDiscountedPriceAndAppliedDiscountsForProduct(productResponse);
+        let productsResponsePromises = await Promise.allSettled(products.map(product => this.convertProductToProductResponseAsync(product, {includeDiscountAndDiscountPrice: options.includeDiscountAndDiscountPrice})));
+        for(let productPromise of productsResponsePromises){
+            if(productPromise.status === "fulfilled" && productPromise.value){
+                productsResponses.push(productPromise.value)
             }
-            productsResponses.push(productResponse)
         }
         return productsResponses
     }
 
-    
+    getProducts = async (getProductsQuery: {brandId: Types.ObjectId}, options?: {includeDiscountAndDiscountPrice: boolean, includeCategories?: boolean}): Promise<ProductResponse[]> => {
+        let products = await this.productRepository.getAsync(getProductsQuery, {categories: options.includeCategories});
+        let allProducts = await Promise.allSettled(products.map(async product => await this.convertProductToProductResponseAsync(product, {includeDiscountAndDiscountPrice: options.includeDiscountAndDiscountPrice ?? true})));
+        return allProducts.map(
+            item => {
+                if(item.status === "fulfilled" && item.value){
+                    return item.value;
+                }
+            }
+        )
+        .filter(item => item);
+    }
     getProduct = async (productId: Types.ObjectId): Promise<ProductResponse> => {
         try{
 
             this.eventTracer.say("Getting product with id: " + productId);
             let productFromDb = await this.getProductByIdOrRaiseException(productId, {discounts: true});
-            let product = (await this.convertProductsToProductResponse([productFromDb], true))[0];
+            let product = (await this.convertProductsToProductResponse([productFromDb], {includeDiscountAndDiscountPrice: true}))[0];
             let allCategoriesFiltersDict: {[key: string]: Filter} = await this.getAllCategoryFiltersForProduct(product.categories as Types.ObjectId[]);
 
             this.eventTracer.say(`Added all filters to product`);
@@ -355,103 +384,6 @@ export default class ProductService implements IProductService {
         }
 
         return filterDict;
-    }
-
-    
-    getCategoryEnriched = async (categoryId: Types.ObjectId | string, filters: {[key: string]: string}, page: number = 0, pageSize: number = 10): Promise<Category> => {
-       try{
-         // get category
-         this.eventTracer.say("Get Category Product");
-         let category = await this.categoryService.getCategoryEnriched(categoryId, {subCategories: true, filters: true});
-         let cleanedFilters: {[key: string]: string[] | number[]} = {};
-         this.eventTracer.say(`Cleaning filters`)
-         for(let [filterName, filterValuesAsString] of Object.entries(filters)){
-             let filterValues = filterValuesAsString.split(",");
-             cleanedFilters[filterName] = filterValues;
-         }
-         
-         let categoryFiltersAsDict : {[key: string]: Filter} = this.transformCategoryFiltersToDict(category.filters);
-         let validSearchFiltersWithIdAsKey: {[key: string]: Filter} = {}
-         let validSearchFiltersIds : Set<string> = new Set();
-         
-         // apply filter logic on product
-         // get filters from category based on filter names , convert to filter id for easier search
-         this.eventTracer.say(`Getting valid filters ids`);
-         for(let filter in filters){
-            this.eventTracer.say(`DEBUG!:exploring ${filter} found`);
-
-             let filterInCategory = category.filters.find(categoryFilter => {
-                console.log({categoryFilter, categoryFiltersAsDict})
-                return categoryFilter.name.toLowerCase() === filter.toLowerCase() && categoryFiltersAsDict.hasOwnProperty(categoryFilter._id.toJSON())});
-             
-             if(filterInCategory){
-                 this.eventTracer.say(`DEBUG!: ${filterInCategory.name}`);
-                 validSearchFiltersWithIdAsKey[filterInCategory._id.toJSON()] = filterInCategory;
-                 validSearchFiltersIds.add(filterInCategory._id.toJSON());
-             }
-         }
-         this.eventTracer.say(`Valid search filter ids gotten : ${validSearchFiltersIds}`)
-         // get filter ids
-        
-         let allProductsWithCategoryId = await this.productRepository.getAsync({
-             categories: category._id
-         }, {discounts: true});
-         let productsMatchingFilters: Product[] = [];
-         // apply filters
-         if(!ObjectUtility.objectSize(validSearchFiltersWithIdAsKey)){ // if no valid filter then all products are valid searches
-             this.eventTracer.say(`All products are valid searches`);
-             productsMatchingFilters = allProductsWithCategoryId;
-         }  
-         else{
-            this.eventTracer.say(`narrowing down products based on valid search filters`)
-            for(let product of allProductsWithCategoryId){
- 
-                 let productMatchesAllFilters = true;
-                 
-                 for(let filterId in validSearchFiltersWithIdAsKey){
-                     let productFilterValue = product.filters.get(filterId)
-                     if(!productFilterValue){
-                         productMatchesAllFilters = false;
-                         this.eventTracer.say(`DEBUG ONLY!!: Product does not have filter with name ${validSearchFiltersWithIdAsKey[filterId].name}`)
-                         break; // move on to the next product as it does not have all needed filters
-                     }
-                     // get category filter value as well as type
-                     let filterDetailsFromCategory = categoryFiltersAsDict[filterId];
-                     switch(filterDetailsFromCategory.filterType.toLowerCase()){ // get filter type 
-                         case "string":
-                         default:
-                             let filterName = filterDetailsFromCategory.name// full circle back to name LOL
-                             let selectedSearchValuesForFilter = cleanedFilters[filterName] as string[]
-                             let productValuesForFilter = product.filters.get(filterId)?.values;
-                             let doesProductMatchFilter = productValuesForFilter?.some(productValue => selectedSearchValuesForFilter.includes(productValue))
-                             if(!doesProductMatchFilter){
-                                 this.eventTracer.say(`DEBUG ONLY!!: Product does not have a valid value for filter with name ${validSearchFiltersWithIdAsKey[filterId].name}, filter values ${selectedSearchValuesForFilter}, product values: ${productValuesForFilter}`)
- 
-                                 productMatchesAllFilters = false;
-                                 break;
-                             }
-                     }
-                     // if type string or default
-                     // 
-                 }
-                 if(productMatchesAllFilters){
-                    this.eventTracer.say("DEBUG: Product matches filters")
-                    productsMatchingFilters.push(product);
-                 }
-             }
-         } 
-         
-         const productsResponse = await this.convertProductsToProductResponse(productsMatchingFilters, true)
-         const paginatedProducts = PaginationUtility.paginateData<ProductResponse>( productsResponse, page, pageSize);
-
-         category.pagedProducts = paginatedProducts;
-         this.eventTracer.isSuccessWithResponseAndMessage(category)
-         return category;
-       }
-       catch(ex){
-            this.eventTracer.isExceptionWithMessage(`${ex}`);
-            throw ex;
-        }
     }
 
     private isValidDiscount = (discount: Discount, productCurrency?: Currency | string): boolean => {
@@ -477,7 +409,7 @@ export default class ProductService implements IProductService {
         return isValidDiscount;
     }
     private getActiveDiscount = async (product: ProductResponse): Promise<Discount | null> => {
-        // RULES: Only One discount is applied per product. The discount applied is the most recent valid discount
+        // RULES: Only One discount is applied per product. The discount applied is the most recent discount
         const discounts = product.discounts;
         // sort discounts by date in descending order
         let cleanedDiscount: Discount[] = [];
@@ -495,17 +427,26 @@ export default class ProductService implements IProductService {
             let millisecondsForB = b.createdAt?.getTime() ?? 0
             return millisecondsForB - millisecondsForA; // sort date in descending order
         })
-
-        for(let discount of cleanedDiscount){
-            console.log({"Working": "WORKING", discount})
-            if(this.isValidDiscount(discount, product.currency)){
-                return discount;
-            }
+        if(!cleanedDiscount.length){
+            return null;
         }
+        let discountToApply = cleanedDiscount[0];
+        if(this.isValidDiscount(discountToApply, product.currency)){
+            return discountToApply;
+        }
+
+        // NOTE:  Use only if we want to apply the most recent *VALID* Discount to this product
+        // for(let discount of cleanedDiscount){ 
+        //     console.log({"Working": "WORKING", discount})
+        //     if(this.isValidDiscount(discount, product.currency)){
+        //         return discount;
+        //     }
+        // }
         return null;
     }
     getDiscountedPriceAndAppliedDiscountsForProduct = async (product: ProductResponse) : Promise<ProductResponse> => {
         try{
+            console.log("We reach here")
             this.eventTracer.say(`Get Discounted Price And Applied DiscountsForProduct`)
             if(!product.discounts.length){
                 return product;
@@ -550,6 +491,8 @@ export default class ProductService implements IProductService {
             throw ex;
         }
     }
+    ///
+    /// <summary>Applies Discount to Product</summary>
     applyDiscount = async (productId: Types.ObjectId, discountId: Types.ObjectId): Promise<Product> => {
         try{
             this.eventTracer.say(`Apply Discount`);
@@ -574,12 +517,42 @@ export default class ProductService implements IProductService {
          }
     }
 
+    createOrUseExistingDiscountForProduct = async (productDiscount: ApplyProductToDiscount) => {
+        if(productDiscount.discountId){
+            return productDiscount
+        }
+        let discount = await this.discountService.createDiscount(productDiscount.discount);
+        await this.applyDiscount(new Types.ObjectId(productDiscount.productId), discount._id);
+        productDiscount.discountId = discount._id;
+
+        return productDiscount;
+    }
+    applyDiscountsToProducts = async (productDiscounts: ApplyProductToDiscount[]): Promise<ApplyProductToDiscount[]> => {
+        try{
+            // create product's discount for products with discount 
+            let discountsForProducts: ApplyProductToDiscount[] = []
+            let settleProductsWithNewDiscounts = productDiscounts.map(productAndDiscount => this.createOrUseExistingDiscountForProduct(productAndDiscount))
+            let productsAndDiscountsPromise = await Promise.allSettled(settleProductsWithNewDiscounts)
+            for(let result of productsAndDiscountsPromise){
+                if(result.status === "fulfilled" && result.value){
+                    discountsForProducts.push(result.value);
+                }
+            }
+
+            return discountsForProducts;            
+        }
+        catch(ex){
+             this.eventTracer.isExceptionWithMessage(`${ex}`);
+             throw ex;
+         }
+    }
+
     getProductsWithDiscountedPriceByIds = async (ids: Types.ObjectId[]): Promise<ProductResponse[]> => {
         console.log({ids})
         let productsWithDiscount = await this.productRepository.contains({_id: ids}, {discounts: true});
         
 
-        let response = await this.convertProductsToProductResponse(productsWithDiscount, true);
+        let response = await this.convertProductsToProductResponse(productsWithDiscount, {includeDiscountAndDiscountPrice: true});
         
         return response
     }
@@ -596,7 +569,7 @@ export default class ProductService implements IProductService {
             let productsWithDiscounts: ProductResponse[] = [] 
             for(let discountId of discountIds){
                 const specialOrderProducts = await this.productRepository.getAsync({discounts: discountId});
-                var specialOrderProductsResponse = await this.convertProductsToProductResponse(specialOrderProducts, true);
+                var specialOrderProductsResponse = await this.convertProductsToProductResponse(specialOrderProducts, {includeDiscountAndDiscountPrice: true});
                 productsWithDiscounts = [...productsWithDiscounts, ...specialOrderProductsResponse];
             }
 
@@ -609,4 +582,97 @@ export default class ProductService implements IProductService {
             throw ex;
         }
     }
+
+    addProductsWithDiscountToSpecialOffer = async (specialOfferId: string | Types.ObjectId, productDiscounts: ApplyProductToDiscount[]) : Promise<Discount[]>=> {
+        try{
+            this.eventTracer.say(`AddProductsWithDiscountToSpecialOffer: Getting special offer ${specialOfferId}`);
+            this.eventTracer.request = productDiscounts;
+            let specialOffer = await this.discountService.getSpecialOffer(specialOfferId);
+            
+            if(!specialOffer){
+                throw new NotFoundException(`Special offer with id ${specialOfferId} not found`);
+            }
+
+            let appliedDiscountsAndProducts = await this.applyDiscountsToProducts(productDiscounts);
+            this.eventTracer.say(`Applied Discounts length: ${appliedDiscountsAndProducts?.length ?? 0}`)
+            let addedDiscountsToSpecialOffers =  await this.discountService.addDiscountsToSpecialOffer(specialOfferId, appliedDiscountsAndProducts.map(discountAndProduct => new Types.ObjectId(discountAndProduct.discountId)));
+            this.eventTracer.isSuccessWithResponseAndMessage(addedDiscountsToSpecialOffers);
+
+            return addedDiscountsToSpecialOffers;
+        }
+        catch(ex){
+            this.eventTracer.isExceptionWithMessage(`${ex}`);
+            throw ex;
+        }
+    }
+
+    bestSellers = async (query: BestSellersQuery): Promise<PaginationResponse<ProductResponse>> => {
+        let useQuery : {[key in keyof Partial<Product>]: any}= {}
+        if(query.categoryId){
+            useQuery.categories = new Types.ObjectId(query.categoryId)
+        }
+        let response = await this.productRepository.toPagedAsync(useQuery, query.page, query.pageSize, {"inventory.qtySold": -1})
+        let items = (await Promise.allSettled(response.items.map(async item =>  await this.convertProductToProductResponseAsync(item, {includeDiscountAndDiscountPrice: true}))))
+            .map(
+                item => {
+                    if(item.status === "fulfilled" && item.value){
+                        return item.value;
+                    }
+                }
+            )
+            .filter(item => item);
+        return new PaginationResponse<ProductResponse>({...response, items});
+    }
+
+    
+    public setProductsAvailabilityPriceAndCurrencyForCartItems = async (items: (CartItem | CreateCartItemRequest)[]): Promise<CartItem[]> => {
+        let allProducts: Product[] = [];
+        let allProductsWithOnlyIds: Types.ObjectId[] = []
+        for(let item of items){
+            let product = item.product;
+            if(product instanceof Types.ObjectId || typeof(product) === "string"){
+                product = new Types.ObjectId(product);
+                allProductsWithOnlyIds.push(product)
+            }
+            else{
+                allProducts.push(product)
+            }
+        }
+        let productsResponse: ProductResponse[] = await this.getProductsWithDiscountedPriceByIds([...allProductsWithOnlyIds, ...allProducts.map(prod => prod._id)]);
+
+        let productResponseDict : {[key : string]: ProductResponse} = {}
+        productsResponse.forEach(productResponse => {
+            productResponseDict[productResponse._id.toString()] = productResponse
+        })
+        let returnResponse : CartItem[] = []
+        for(let item of items){
+            let product = item.product;
+            let productId = product instanceof Types.ObjectId || typeof(product) === "string" ? product.toString() : product._id?.toString() ?? '';
+            let productResponse : ProductResponse = productResponseDict[productId];
+            if(item instanceof CreateCartItemRequest){
+                item = new CartItem({...item, product: new Types.ObjectId(item.product), status: ItemStatus.UNAVAILABLE, priceAtOrder: 0, currency: ""});
+            }
+            if(!productResponse){
+                item.status = ItemStatus.UNAVAILABLE;
+                continue;
+            }
+            item.priceAtOrder = productResponse.discountedPrice;
+            item.currency = productResponse.currency;
+            if(item.qty > productResponse.inventory.qtyAvailable){
+                item.status = ItemStatus.QTY_NOT_AVAILABLE;
+            }
+            else{
+                item.status = ItemStatus.AVAILABLE
+            }
+            returnResponse.push(item as CartItem);
+
+        }
+
+        return returnResponse;
+    }
+    
+
+
 }
+
+

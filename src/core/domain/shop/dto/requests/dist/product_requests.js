@@ -1,7 +1,21 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 exports.__esModule = true;
-exports.UpdateProductRequest = exports.UpdatePackProduct = exports.CreatePackProduct = exports.CreateProductRequest = exports.CreateFilterForProduct = void 0;
+exports.BestSellersQuery = exports.ApplyProductToDiscount = exports.UpdateProductRequest = exports.UpdatePackProduct = exports.CreatePackProduct = exports.CreateProductRequest = exports.CreateFilterForProduct = void 0;
 var currency_1 = require("../../../../domain/common/enum/currency");
+var paginate_request_1 = require("../../../../domain/common/dto/requests/paginate_request");
 var CreateFilterForProduct = /** @class */ (function () {
     function CreateFilterForProduct() {
     }
@@ -11,7 +25,7 @@ exports.CreateFilterForProduct = CreateFilterForProduct;
 var CreateProductRequest = /** @class */ (function () {
     function CreateProductRequest(init) {
         if (init === void 0) { init = null; }
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         this.mainImg = null;
         this.otherMedia = [];
         this.price = 0;
@@ -31,6 +45,7 @@ var CreateProductRequest = /** @class */ (function () {
         this.categories = (_h = init === null || init === void 0 ? void 0 : init.categories) !== null && _h !== void 0 ? _h : [];
         this.extras = (_j = init === null || init === void 0 ? void 0 : init.extras) !== null && _j !== void 0 ? _j : [];
         this.isPack = (_k = init === null || init === void 0 ? void 0 : init.isPack) !== null && _k !== void 0 ? _k : false;
+        this.brandId = (_l = init === null || init === void 0 ? void 0 : init.brandId) !== null && _l !== void 0 ? _l : null;
     }
     return CreateProductRequest;
 }());
@@ -53,7 +68,22 @@ var UpdateProductRequest = /** @class */ (function () {
     function UpdateProductRequest() {
         this.price = 0;
         this.currency = currency_1.Currency.NGN;
+        this.brandId = null;
     }
     return UpdateProductRequest;
 }());
 exports.UpdateProductRequest = UpdateProductRequest;
+var ApplyProductToDiscount = /** @class */ (function () {
+    function ApplyProductToDiscount() {
+    }
+    return ApplyProductToDiscount;
+}());
+exports.ApplyProductToDiscount = ApplyProductToDiscount;
+var BestSellersQuery = /** @class */ (function (_super) {
+    __extends(BestSellersQuery, _super);
+    function BestSellersQuery() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return BestSellersQuery;
+}(paginate_request_1["default"]));
+exports.BestSellersQuery = BestSellersQuery;

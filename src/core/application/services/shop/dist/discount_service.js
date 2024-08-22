@@ -135,15 +135,23 @@ var DiscountService = /** @class */ (function () {
                 }
             });
         }); };
+        this.getSpecialOffer = function (specialOfferId) { return __awaiter(_this, void 0, Promise, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        specialOfferId = new mongoose_1.Types.ObjectId(specialOfferId);
+                        return [4 /*yield*/, this.specialOfferRepository.getByIdAsync(specialOfferId)];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
+            });
+        }); };
         this.addDiscountsToSpecialOffer = function (specialOfferId, discountIds) { return __awaiter(_this, void 0, Promise, function () {
             var specialOffer, ex_3;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 5, , 6]);
-                        // find special offer
-                        specialOfferId = new mongoose_1.Types.ObjectId(specialOfferId);
-                        return [4 /*yield*/, this.specialOfferRepository.getByIdAsync(specialOfferId)];
+                        return [4 /*yield*/, this.getSpecialOffer(specialOfferId)];
                     case 1:
                         specialOffer = _a.sent();
                         if (!specialOffer) return [3 /*break*/, 4];

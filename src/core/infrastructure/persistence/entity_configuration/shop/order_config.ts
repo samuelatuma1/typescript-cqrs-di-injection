@@ -6,7 +6,8 @@ const OrderItemSchema = new Schema<OrderItem>({
     product: {type: Schema.Types.ObjectId, ref: 'Product'},
     qty: {type: Number},
     priceAtOrder: {type: Number},
-    currency: {type: String}
+    currency: {type: String},
+    status: {type: String, default : ""}
 })
 export const OrderSchema = new Schema<Order>({
     createdAt: { type: Date, required: true },

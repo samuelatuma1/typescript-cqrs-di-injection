@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import IProductService, { IIProductService } from "../../core/application/contract/services/shop/product_service";
 import { inject, injectable } from "tsyringe";
-import { CreatePackProduct, CreateProductRequest, UpdatePackProduct, UpdateProductRequest } from "../../core/domain/shop/dto/requests/product_requests";
+import { BestSellersQuery, CreatePackProduct, CreateProductRequest, UpdatePackProduct, UpdateProductRequest } from "../../core/domain/shop/dto/requests/product_requests";
 import BaseController from "./base_controller";
 import SerializationUtility from "../../core/application/common/utilities/serialization_utility";
 import { Types } from "mongoose";
@@ -95,19 +95,12 @@ export default class ProductController extends BaseController {
                     imgs.push(img[0])
                 }
             }
-            let x: {[key: string]: UploadFile} = {}
-            console.log("##################################################")
-            console.log("##################################################")
             for(let j = 0; j < (reqBody.length ?? 0); j++){
                 let productImg = imgs[j] ?? null;
                 
                 reqBody[j].mainImg = productImg;
-                x[j] = reqBody[j].mainImg
             }
 
-            console.log("##################################################")
-            console.log(x)
-            console.log("##################################################")
             let product = await this.productService.addPackProducts(productId, reqBody);
             return res.json(product);
         }
@@ -145,6 +138,24 @@ export default class ProductController extends BaseController {
         }
         catch(ex){
             next(ex)
+        }
+    }
+
+    public bestSellers = async (req: Request<{}, {}, {}, BestSellersQuery>, res: Response, next: NextFunction) => {
+        try{
+            let query: BestSellersQuery = req.query;
+
+            console.log("Here")
+            let page = query.page ?? 0;
+            let pageSize = query.pageSize ?? 0;
+            req.query.page = parseInt(page.toString());
+            req.query.pageSize = parseInt(pageSize.toString());
+            console.log({query: req.query})
+            let response = await this.productService.bestSellers(req.query)
+            return res.json(response)
+        }
+        catch(ex){
+            next(ex);
         }
     }
 

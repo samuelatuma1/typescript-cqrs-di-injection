@@ -5,7 +5,8 @@ const CartItemSchema = new Schema<CartItem>({
     product: {type: Schema.Types.ObjectId, ref: 'Product'},
     qty: {type: Number },
     priceAtOrder: {type: Number},
-    currency: {type: String}
+    currency: {type: String},
+    status: {type: String, default : ''}
 });
 export const CartSchema = new Schema<Cart>({
     createdAt: { type: Date, required: true },

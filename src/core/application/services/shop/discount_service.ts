@@ -62,11 +62,15 @@ export default class DiscountService implements IDiscountService {
         return await this.discountRepository.getAsync({specialOfferid: specialOfferId});
     }
 
+    getSpecialOffer = async (specialOfferId: Types.ObjectId | string): Promise<SpecialOffer> => {
+        specialOfferId = new Types.ObjectId(specialOfferId);
+        return await this.specialOfferRepository.getByIdAsync(specialOfferId);
+    }
+
     addDiscountsToSpecialOffer = async (specialOfferId: Types.ObjectId | string, discountIds: Types.ObjectId[] | string[]): Promise<Discount[]> => {
         try{
             // find special offer
-            specialOfferId = new Types.ObjectId(specialOfferId);
-            const specialOffer = await this.specialOfferRepository.getByIdAsync(specialOfferId);
+            const specialOffer = await this.getSpecialOffer(specialOfferId);
             if(specialOffer){
                 discountIds = discountIds.map(id => new Types.ObjectId(id));
                 await this.discountRepository.updateManyAsync({_id: {$in: discountIds}}, {

@@ -5,6 +5,7 @@ import { NextFunction, Router } from "express";
 import { Request, Response } from "express";
 import { Types } from "mongoose";
 import JwtMiddlewareAuth from "../../api/middlewares/jwt_auth_middleware";
+import { BestSellersQuery } from "../../core/domain/shop/dto/requests/product_requests";
 
 const productRoute = Router();
 const productController = iocContainer.resolve(ProductController);
@@ -28,10 +29,10 @@ productRoute.post("/add-pack-products/:productId", upload.fields(
 productRoute.delete("/delete-pack-product/:productId", (req: Request, res , next) => productController.deletePackProduct(req as unknown as Request<{productId: Types.ObjectId}, {}, {}, {packProductId: Types.ObjectId | string}>, res, next));
 productRoute.put("/update-pack-product/:productId", upload.fields([{name: 'mainImg', maxCount: 1}, {name: 'otherMedia', maxCount: 10}]), (req: Request, res , next) => productController.updatePackProduct(req as unknown as Request<{productId: Types.ObjectId }, {}, {data: string}, {packProductId: Types.ObjectId | string}>, res, next));
 
-productRoute.put("/:productId", (req: Request<{productId: string}>, res, next) => productController.updateProduct(req, res, next))
-productRoute.get("/:productId", (req: Request<{productId: string}>, res, next) => productController.getProduct(req, res, next))
 productRoute.get("/special-offer/:offerId", (req: Request<{offerId: Types.ObjectId }>, res, next ) => productController.specialOffers(req, res, next));
 
-// upload.fields([{name: 'mainImg1', maxCount: 1}
+productRoute.get("/best-sellers", (req: Request, res, next) => productController.bestSellers(req, res, next));
+productRoute.get("/:productId", (req: Request<{productId: string}>, res, next) => productController.getProduct(req, res, next))
+productRoute.put("/:productId", (req: Request<{productId: string}>, res, next) => productController.updateProduct(req, res, next))
 
 export default productRoute;

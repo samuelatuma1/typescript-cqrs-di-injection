@@ -5,6 +5,10 @@ import { Types } from "mongoose";
 import { BaseRepository } from "../common/base_repository";
 import { productModel } from "../../entity_configuration/shop/product_config";
 
+export enum SortOrder {
+    desc = "desc",
+    asc = "asc"
+}
 @injectable()
 export default class ProductRepository extends  BaseRepository<Product, Types.ObjectId> implements IProductRepository{
     public constructor(){

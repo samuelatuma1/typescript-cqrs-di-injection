@@ -50,7 +50,8 @@ export const ProductSchema = new Schema<Product>({
 
     discounts: {type: [Schema.Types.ObjectId], ref: 'Discount'},
     isPack: {type: Boolean, default: false},
-    packProducts: {type:[PackProductSchema]}
+    packProducts: {type:[PackProductSchema]},
+    brandId: {type: Schema.Types.ObjectId, ref: 'Brand', default: null}
 });
 
 export const productModel = model<Product>('Product', ProductSchema);

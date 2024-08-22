@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -97,7 +108,7 @@ var BaseRepository = /** @class */ (function () {
                 }
             });
         }); };
-        this.getAsync = function (query, joins) {
+        this.getAsync = function (query, joins, sort) {
             if (query === void 0) { query = {}; }
             return __awaiter(_this, void 0, Promise, function () {
                 var dbQuery, key;
@@ -114,6 +125,9 @@ var BaseRepository = /** @class */ (function () {
                                         dbQuery.populate(key);
                                     }
                                 }
+                            }
+                            if (sort) {
+                                dbQuery.sort(sort);
                             }
                             return [4 /*yield*/, dbQuery];
                         case 1: return [2 /*return*/, _a.sent()];
@@ -210,6 +224,45 @@ var BaseRepository = /** @class */ (function () {
                 });
             });
         };
+        this.addToFieldsList = function (query, fields) { return __awaiter(_this, void 0, Promise, function () {
+            var addToSetQuery, _i, _a, _b, key, values, updatedResponse;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        addToSetQuery = {};
+                        for (_i = 0, _a = Object.entries(fields); _i < _a.length; _i++) {
+                            _b = _a[_i], key = _b[0], values = _b[1];
+                            addToSetQuery[key] = { $each: values };
+                            console.log({ $each: values });
+                        }
+                        console.log({ query: query, $addToSet: addToSetQuery });
+                        return [4 /*yield*/, this._model.updateMany(query, { $addToSet: addToSetQuery })];
+                    case 1:
+                        updatedResponse = _c.sent();
+                        console.log({ updatedResponse: updatedResponse });
+                        return [2 /*return*/, updatedResponse.modifiedCount];
+                }
+            });
+        }); };
+        this.removeFromFieldsList = function (query, fields) { return __awaiter(_this, void 0, Promise, function () {
+            var deleteFromFieldListQuery, _i, _a, _b, key, values, updatedResponse;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        deleteFromFieldListQuery = {};
+                        for (_i = 0, _a = Object.entries(fields); _i < _a.length; _i++) {
+                            _b = _a[_i], key = _b[0], values = _b[1];
+                            deleteFromFieldListQuery[key] = { $in: values };
+                        }
+                        console.log({ $pull: deleteFromFieldListQuery });
+                        return [4 /*yield*/, this._model.updateMany(query, { $pull: deleteFromFieldListQuery })];
+                    case 1:
+                        updatedResponse = _c.sent();
+                        console.log(updatedResponse);
+                        return [2 /*return*/, updatedResponse.modifiedCount];
+                }
+            });
+        }); };
         this.deleteManyAsync = function (query, soft) {
             if (soft === void 0) { soft = true; }
             return __awaiter(_this, void 0, Promise, function () {
@@ -234,7 +287,7 @@ var BaseRepository = /** @class */ (function () {
                 });
             });
         };
-        this.getPagedAsync = function (query, lastItemId, pageSize) {
+        this.getPagedAsync = function (query, lastItemId, pageSize, sort) {
             if (pageSize === void 0) { pageSize = 10; }
             return __awaiter(_this, void 0, Promise, function () {
                 var queryData, result;
@@ -245,7 +298,8 @@ var BaseRepository = /** @class */ (function () {
                             if (lastItemId != null) {
                                 queryData._id = { $gt: lastItemId };
                             }
-                            return [4 /*yield*/, this._model.find(queryData).sort({ _id: 1 }).limit(pageSize)];
+                            sort = __assign(__assign({}, sort), { _id: 1 });
+                            return [4 /*yield*/, this._model.find(queryData).sort(sort).limit(pageSize)];
                         case 1:
                             result = _a.sent();
                             return [2 /*return*/, result];
@@ -258,20 +312,21 @@ var BaseRepository = /** @class */ (function () {
             if (pageSize === void 0) { pageSize = 10; }
             if (sort === void 0) { sort = { _id: -1 }; }
             return __awaiter(_this, void 0, Promise, function () {
-                var itemsToSkipCount, result, totalCount, paginatedItems, totalPages;
+                var itemsToSkipCount, paginatedItemsAggregate, result, totalCount, paginatedItems, totalPages;
                 var _a, _b;
                 return __generator(this, function (_c) {
                     switch (_c.label) {
                         case 0:
-                            itemsToSkipCount = (page - 1) * pageSize;
+                            itemsToSkipCount = (page === 0 ? 0 : (page - 1)) * pageSize;
+                            paginatedItemsAggregate = page === 0 ? [] : [
+                                { $skip: itemsToSkipCount },
+                                { $limit: pageSize },
+                            ];
                             return [4 /*yield*/, this._model.aggregate([
                                     { $match: query },
                                     { $sort: sort },
                                     { $facet: {
-                                            paginatedItems: [
-                                                { $skip: itemsToSkipCount },
-                                                { $limit: pageSize },
-                                            ],
+                                            paginatedItems: paginatedItemsAggregate,
                                             totalCount: [
                                                 { $count: 'count' },
                                             ]
@@ -281,8 +336,8 @@ var BaseRepository = /** @class */ (function () {
                             result = _c.sent();
                             totalCount = result[0].totalCount[0] ? result[0].totalCount[0].count : 0;
                             paginatedItems = (_b = (_a = result[0]) === null || _a === void 0 ? void 0 : _a.paginatedItems) !== null && _b !== void 0 ? _b : [];
-                            totalPages = Math.floor(totalCount / pageSize) + ((totalCount % pageSize == 0) ? 0 : 1);
-                            return [2 /*return*/, new pagination_result_1.PaginationResponse(page, pageSize, totalCount, totalPages, paginatedItems)];
+                            totalPages = page === 0 ? 1 : Math.floor(totalCount / pageSize) + ((totalCount % pageSize == 0) ? 0 : 1);
+                            return [2 /*return*/, new pagination_result_1.PaginationResponse(page, page === 0 ? totalCount : pageSize, totalCount, totalPages, paginatedItems)];
                     }
                 });
             });

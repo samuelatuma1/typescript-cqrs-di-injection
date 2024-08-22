@@ -354,7 +354,6 @@ export default class UserService implements IUserService {
             let userPermissionIdsFromRoles: Types.ObjectId[] = []
             
             user.roles.forEach(role => {
-                console.log({role})
                 let permissionForRoles: Types.ObjectId[] = []
                 
                     for(let userPermissionId of (role as UserRole).permissions){
@@ -369,8 +368,7 @@ export default class UserService implements IUserService {
             this.eventTracer.say(`Getting user permissions from roles`)
             userPermissions = [...userPermissions, ...allUserRolesPermissions]
             let permissionNames = userPermissions.map(permission => permission.name);
-            this.eventTracer.say(`All user permissions count: ${userPermissions.length}.`)
-            this.eventTracer.say(`All user roles count: ${user.roles.length}.`);
+            this.eventTracer.say(`All user permissions count: ${userPermissions.length}.\nAll user roles count: ${user.roles.length}.`)
             let roleNames = (user.roles as UserRole[]).map(role => role.name);
 
             this.eventTracer.say(`Getting access and refresh tokens`)

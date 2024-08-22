@@ -76,12 +76,15 @@ var product_repository_1 = require("../../../application/contract/data_access/sh
 var file_service_1 = require("../../../application/contract/services/files/file_service");
 var not_found_exception_1 = require("../../../application/common/exceptions/not_found_exception");
 var product_response_1 = require("../../../domain/shop/dto/responses/product_response");
-var pagination_utility_1 = require("../../../application/common/utilities/pagination_utility");
 var discount_service_1 = require("../../../application/contract/services/shop/discount_service");
 var discount_1 = require("../../../domain/shop/entity/discount");
 var date_utility_1 = require("../../../application/common/utilities/date_utility");
 var validation_exception_1 = require("../../../application/common/exceptions/validation_exception");
 var serialization_utility_1 = require("../../../application/common/utilities/serialization_utility");
+var pagination_result_1 = require("../../../domain/authentication/dto/results/pagination_result");
+var cart_1 = require("../../../domain/shop/entity/cart");
+var item_status_1 = require("../../../domain/shop/enum/item_status");
+var cart_request_1 = require("../../../domain/shop/dto/requests/cart_request");
 var ProductService = /** @class */ (function () {
     function ProductService(eventTracer, categoryService, productRepository, discountService, fileService) {
         var _this = this;
@@ -258,6 +261,15 @@ var ProductService = /** @class */ (function () {
                         _a = this.convertProductToProductResponse;
                         return [4 /*yield*/, this.productRepository.getByIdAsync(productId)];
                     case 5: return [2 /*return*/, _a.apply(this, [_b.sent()])];
+                }
+            });
+        }); };
+        this.getQuery = function (query, options) { return __awaiter(_this, void 0, Promise, function () {
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, this.productRepository.getAsync(query, { discounts: (_a = options.includeDiscounts) !== null && _a !== void 0 ? _a : false })];
+                    case 1: return [2 /*return*/, _b.sent()];
                 }
             });
         }); };
@@ -477,36 +489,69 @@ var ProductService = /** @class */ (function () {
             productResponse.packProducts = (_a = productResponse.packProducts) === null || _a === void 0 ? void 0 : _a.filter(function (prod) { return !prod.isDeleted; });
             return productResponse;
         };
-        this.convertProductsToProductResponse = function (products, includeDiscountAndDiscountPrice) {
-            if (includeDiscountAndDiscountPrice === void 0) { includeDiscountAndDiscountPrice = false; }
-            return __awaiter(_this, void 0, Promise, function () {
-                var productsResponses, _i, products_1, product, productResponse;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            productsResponses = [];
-                            _i = 0, products_1 = products;
-                            _a.label = 1;
-                        case 1:
-                            if (!(_i < products_1.length)) return [3 /*break*/, 5];
-                            product = products_1[_i];
-                            productResponse = this.convertProductToProductResponse(product);
-                            if (!includeDiscountAndDiscountPrice) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.getDiscountedPriceAndAppliedDiscountsForProduct(productResponse)];
-                        case 2:
-                            productResponse = _a.sent();
-                            _a.label = 3;
-                        case 3:
-                            productsResponses.push(productResponse);
-                            _a.label = 4;
-                        case 4:
-                            _i++;
-                            return [3 /*break*/, 1];
-                        case 5: return [2 /*return*/, productsResponses];
-                    }
-                });
+        this.convertProductToProductResponseAsync = function (product, options) { return __awaiter(_this, void 0, Promise, function () {
+            var productResponse;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        productResponse = new product_response_1.ProductResponse(product);
+                        productResponse._id = product._id;
+                        productResponse.packProducts = (_a = productResponse.packProducts) === null || _a === void 0 ? void 0 : _a.filter(function (prod) { return !prod.isDeleted; });
+                        if (!((_b = options.includeDiscountAndDiscountPrice) !== null && _b !== void 0 ? _b : false)) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.getDiscountedPriceAndAppliedDiscountsForProduct(productResponse)];
+                    case 1:
+                        productResponse = _c.sent();
+                        _c.label = 2;
+                    case 2: return [2 /*return*/, productResponse];
+                }
             });
-        };
+        }); };
+        this.convertProductsToProductResponse = function (products, options) { return __awaiter(_this, void 0, Promise, function () {
+            var productsResponses, productsResponsePromises, _i, productsResponsePromises_1, productPromise;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        productsResponses = [];
+                        return [4 /*yield*/, Promise.allSettled(products.map(function (product) { return _this.convertProductToProductResponseAsync(product, { includeDiscountAndDiscountPrice: options.includeDiscountAndDiscountPrice }); }))];
+                    case 1:
+                        productsResponsePromises = _a.sent();
+                        for (_i = 0, productsResponsePromises_1 = productsResponsePromises; _i < productsResponsePromises_1.length; _i++) {
+                            productPromise = productsResponsePromises_1[_i];
+                            if (productPromise.status === "fulfilled" && productPromise.value) {
+                                productsResponses.push(productPromise.value);
+                            }
+                        }
+                        return [2 /*return*/, productsResponses];
+                }
+            });
+        }); };
+        this.getProducts = function (getProductsQuery, options) { return __awaiter(_this, void 0, Promise, function () {
+            var products, allProducts;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.productRepository.getAsync(getProductsQuery, { categories: options.includeCategories })];
+                    case 1:
+                        products = _a.sent();
+                        return [4 /*yield*/, Promise.allSettled(products.map(function (product) { return __awaiter(_this, void 0, void 0, function () { var _a; return __generator(this, function (_b) {
+                                switch (_b.label) {
+                                    case 0: return [4 /*yield*/, this.convertProductToProductResponseAsync(product, { includeDiscountAndDiscountPrice: (_a = options.includeDiscountAndDiscountPrice) !== null && _a !== void 0 ? _a : true })];
+                                    case 1: return [2 /*return*/, _b.sent()];
+                                }
+                            }); }); }))];
+                    case 2:
+                        allProducts = _a.sent();
+                        return [2 /*return*/, allProducts.map(function (item) {
+                                if (item.status === "fulfilled" && item.value) {
+                                    return item.value;
+                                }
+                            })
+                                .filter(function (item) { return item; })];
+                }
+            });
+        }); };
         this.getProduct = function (productId) { return __awaiter(_this, void 0, Promise, function () {
             var productFromDb, product, allCategoriesFiltersDict, ex_5;
             return __generator(this, function (_a) {
@@ -517,7 +562,7 @@ var ProductService = /** @class */ (function () {
                         return [4 /*yield*/, this.getProductByIdOrRaiseException(productId, { discounts: true })];
                     case 1:
                         productFromDb = _a.sent();
-                        return [4 /*yield*/, this.convertProductsToProductResponse([productFromDb], true)];
+                        return [4 /*yield*/, this.convertProductsToProductResponse([productFromDb], { includeDiscountAndDiscountPrice: true })];
                     case 2:
                         product = (_a.sent())[0];
                         return [4 /*yield*/, this.getAllCategoryFiltersForProduct(product.categories)];
@@ -544,118 +589,6 @@ var ProductService = /** @class */ (function () {
             }
             return filterDict;
         };
-        this.getCategoryEnriched = function (categoryId, filters, page, pageSize) {
-            if (page === void 0) { page = 0; }
-            if (pageSize === void 0) { pageSize = 10; }
-            return __awaiter(_this, void 0, Promise, function () {
-                var category, cleanedFilters, _i, _a, _b, filterName, filterValuesAsString, filterValues, categoryFiltersAsDict_1, validSearchFiltersWithIdAsKey, validSearchFiltersIds, _loop_1, this_1, filter, allProductsWithCategoryId, productsMatchingFilters, _c, allProductsWithCategoryId_1, product, productMatchesAllFilters, _loop_2, this_2, filterId, state_1, productsResponse, paginatedProducts, ex_6;
-                var _d;
-                return __generator(this, function (_e) {
-                    switch (_e.label) {
-                        case 0:
-                            _e.trys.push([0, 4, , 5]);
-                            // get category
-                            this.eventTracer.say("Get Category Product");
-                            return [4 /*yield*/, this.categoryService.getCategoryEnriched(categoryId, { subCategories: true, filters: true })];
-                        case 1:
-                            category = _e.sent();
-                            cleanedFilters = {};
-                            this.eventTracer.say("Cleaning filters");
-                            for (_i = 0, _a = Object.entries(filters); _i < _a.length; _i++) {
-                                _b = _a[_i], filterName = _b[0], filterValuesAsString = _b[1];
-                                filterValues = filterValuesAsString.split(",");
-                                cleanedFilters[filterName] = filterValues;
-                            }
-                            categoryFiltersAsDict_1 = this.transformCategoryFiltersToDict(category.filters);
-                            validSearchFiltersWithIdAsKey = {};
-                            validSearchFiltersIds = new Set();
-                            // apply filter logic on product
-                            // get filters from category based on filter names , convert to filter id for easier search
-                            this.eventTracer.say("Getting valid filters ids");
-                            _loop_1 = function (filter) {
-                                this_1.eventTracer.say("DEBUG!:exploring " + filter + " found");
-                                var filterInCategory = category.filters.find(function (categoryFilter) {
-                                    console.log({ categoryFilter: categoryFilter, categoryFiltersAsDict: categoryFiltersAsDict_1 });
-                                    return categoryFilter.name.toLowerCase() === filter.toLowerCase() && categoryFiltersAsDict_1.hasOwnProperty(categoryFilter._id.toJSON());
-                                });
-                                if (filterInCategory) {
-                                    this_1.eventTracer.say("DEBUG!: " + filterInCategory.name);
-                                    validSearchFiltersWithIdAsKey[filterInCategory._id.toJSON()] = filterInCategory;
-                                    validSearchFiltersIds.add(filterInCategory._id.toJSON());
-                                }
-                            };
-                            this_1 = this;
-                            for (filter in filters) {
-                                _loop_1(filter);
-                            }
-                            this.eventTracer.say("Valid search filter ids gotten : " + validSearchFiltersIds);
-                            return [4 /*yield*/, this.productRepository.getAsync({
-                                    categories: category._id
-                                }, { discounts: true })];
-                        case 2:
-                            allProductsWithCategoryId = _e.sent();
-                            productsMatchingFilters = [];
-                            // apply filters
-                            if (!object_utility_1["default"].objectSize(validSearchFiltersWithIdAsKey)) { // if no valid filter then all products are valid searches
-                                this.eventTracer.say("All products are valid searches");
-                                productsMatchingFilters = allProductsWithCategoryId;
-                            }
-                            else {
-                                this.eventTracer.say("narrowing down products based on valid search filters");
-                                for (_c = 0, allProductsWithCategoryId_1 = allProductsWithCategoryId; _c < allProductsWithCategoryId_1.length; _c++) {
-                                    product = allProductsWithCategoryId_1[_c];
-                                    productMatchesAllFilters = true;
-                                    _loop_2 = function (filterId) {
-                                        var productFilterValue = product.filters.get(filterId);
-                                        if (!productFilterValue) {
-                                            productMatchesAllFilters = false;
-                                            this_2.eventTracer.say("DEBUG ONLY!!: Product does not have filter with name " + validSearchFiltersWithIdAsKey[filterId].name);
-                                            return "break";
-                                        }
-                                        // get category filter value as well as type
-                                        var filterDetailsFromCategory = categoryFiltersAsDict_1[filterId];
-                                        switch (filterDetailsFromCategory.filterType.toLowerCase()) { // get filter type 
-                                            case "string":
-                                            default:
-                                                var filterName = filterDetailsFromCategory.name; // full circle back to name LOL
-                                                var selectedSearchValuesForFilter_1 = cleanedFilters[filterName];
-                                                var productValuesForFilter = (_d = product.filters.get(filterId)) === null || _d === void 0 ? void 0 : _d.values;
-                                                var doesProductMatchFilter = productValuesForFilter === null || productValuesForFilter === void 0 ? void 0 : productValuesForFilter.some(function (productValue) { return selectedSearchValuesForFilter_1.includes(productValue); });
-                                                if (!doesProductMatchFilter) {
-                                                    this_2.eventTracer.say("DEBUG ONLY!!: Product does not have a valid value for filter with name " + validSearchFiltersWithIdAsKey[filterId].name + ", filter values " + selectedSearchValuesForFilter_1 + ", product values: " + productValuesForFilter);
-                                                    productMatchesAllFilters = false;
-                                                    break;
-                                                }
-                                        }
-                                    };
-                                    this_2 = this;
-                                    for (filterId in validSearchFiltersWithIdAsKey) {
-                                        state_1 = _loop_2(filterId);
-                                        if (state_1 === "break")
-                                            break;
-                                    }
-                                    if (productMatchesAllFilters) {
-                                        this.eventTracer.say("DEBUG: Product matches filters");
-                                        productsMatchingFilters.push(product);
-                                    }
-                                }
-                            }
-                            return [4 /*yield*/, this.convertProductsToProductResponse(productsMatchingFilters, true)];
-                        case 3:
-                            productsResponse = _e.sent();
-                            paginatedProducts = pagination_utility_1["default"].paginateData(productsResponse, page, pageSize);
-                            category.pagedProducts = paginatedProducts;
-                            this.eventTracer.isSuccessWithResponseAndMessage(category);
-                            return [2 /*return*/, category];
-                        case 4:
-                            ex_6 = _e.sent();
-                            this.eventTracer.isExceptionWithMessage("" + ex_6);
-                            throw ex_6;
-                        case 5: return [2 /*return*/];
-                    }
-                });
-            });
-        };
         this.isValidDiscount = function (discount, productCurrency) {
             var isValidDiscount = false;
             var timeNow = date_utility_1["default"].getUTCNow();
@@ -676,14 +609,14 @@ var ProductService = /** @class */ (function () {
             return isValidDiscount;
         };
         this.getActiveDiscount = function (product) { return __awaiter(_this, void 0, Promise, function () {
-            var discounts, cleanedDiscount, _i, discounts_1, discount, productDiscount, _a, cleanedDiscount_1, discount;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var discounts, cleanedDiscount, _i, discounts_1, discount, productDiscount, discountToApply;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         discounts = product.discounts;
                         cleanedDiscount = [];
                         _i = 0, discounts_1 = discounts;
-                        _b.label = 1;
+                        _a.label = 1;
                     case 1:
                         if (!(_i < discounts_1.length)) return [3 /*break*/, 6];
                         discount = discounts_1[_i];
@@ -691,14 +624,14 @@ var ProductService = /** @class */ (function () {
                         if (!!(discount instanceof discount_1["default"])) return [3 /*break*/, 3];
                         return [4 /*yield*/, this.discountService.getDiscountById(discount)];
                     case 2:
-                        productDiscount = _b.sent();
+                        productDiscount = _a.sent();
                         return [3 /*break*/, 4];
                     case 3:
                         productDiscount = discount;
-                        _b.label = 4;
+                        _a.label = 4;
                     case 4:
                         cleanedDiscount.push(productDiscount);
-                        _b.label = 5;
+                        _a.label = 5;
                     case 5:
                         _i++;
                         return [3 /*break*/, 1];
@@ -709,23 +642,31 @@ var ProductService = /** @class */ (function () {
                             var millisecondsForB = (_d = (_c = b.createdAt) === null || _c === void 0 ? void 0 : _c.getTime()) !== null && _d !== void 0 ? _d : 0;
                             return millisecondsForB - millisecondsForA; // sort date in descending order
                         });
-                        for (_a = 0, cleanedDiscount_1 = cleanedDiscount; _a < cleanedDiscount_1.length; _a++) {
-                            discount = cleanedDiscount_1[_a];
-                            console.log({ "Working": "WORKING", discount: discount });
-                            if (this.isValidDiscount(discount, product.currency)) {
-                                return [2 /*return*/, discount];
-                            }
+                        if (!cleanedDiscount.length) {
+                            return [2 /*return*/, null];
                         }
+                        discountToApply = cleanedDiscount[0];
+                        if (this.isValidDiscount(discountToApply, product.currency)) {
+                            return [2 /*return*/, discountToApply];
+                        }
+                        // NOTE:  Use only if we want to apply the most recent *VALID* Discount to this product
+                        // for(let discount of cleanedDiscount){ 
+                        //     console.log({"Working": "WORKING", discount})
+                        //     if(this.isValidDiscount(discount, product.currency)){
+                        //         return discount;
+                        //     }
+                        // }
                         return [2 /*return*/, null];
                 }
             });
         }); };
         this.getDiscountedPriceAndAppliedDiscountsForProduct = function (product) { return __awaiter(_this, void 0, Promise, function () {
-            var discountedPrice, priceDiscount, activeDiscount, ex_7;
+            var discountedPrice, priceDiscount, activeDiscount, ex_6;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
+                        console.log("We reach here");
                         this.eventTracer.say("Get Discounted Price And Applied DiscountsForProduct");
                         if (!product.discounts.length) {
                             return [2 /*return*/, product];
@@ -767,15 +708,17 @@ var ProductService = /** @class */ (function () {
                         this.eventTracer.isSuccessWithResponseAndMessage(product);
                         return [2 /*return*/, product];
                     case 2:
-                        ex_7 = _a.sent();
-                        this.eventTracer.isExceptionWithMessage("" + ex_7);
-                        throw ex_7;
+                        ex_6 = _a.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_6);
+                        throw ex_6;
                     case 3: return [2 /*return*/];
                 }
             });
         }); };
+        ///
+        /// <summary>Applies Discount to Product</summary>
         this.applyDiscount = function (productId, discountId) { return __awaiter(_this, void 0, Promise, function () {
-            var discount, product, productDiscountSet, updatedDiscountIds, ex_8;
+            var discount, product, productDiscountSet, updatedDiscountIds, ex_7;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -802,10 +745,56 @@ var ProductService = /** @class */ (function () {
                         return [4 /*yield*/, this.productRepository.getByIdAsync(new mongoose_1.Types.ObjectId(productId))];
                     case 4: return [2 /*return*/, _a.sent()];
                     case 5:
+                        ex_7 = _a.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_7);
+                        throw ex_7;
+                    case 6: return [2 /*return*/];
+                }
+            });
+        }); };
+        this.createOrUseExistingDiscountForProduct = function (productDiscount) { return __awaiter(_this, void 0, void 0, function () {
+            var discount;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (productDiscount.discountId) {
+                            return [2 /*return*/, productDiscount];
+                        }
+                        return [4 /*yield*/, this.discountService.createDiscount(productDiscount.discount)];
+                    case 1:
+                        discount = _a.sent();
+                        return [4 /*yield*/, this.applyDiscount(new mongoose_1.Types.ObjectId(productDiscount.productId), discount._id)];
+                    case 2:
+                        _a.sent();
+                        productDiscount.discountId = discount._id;
+                        return [2 /*return*/, productDiscount];
+                }
+            });
+        }); };
+        this.applyDiscountsToProducts = function (productDiscounts) { return __awaiter(_this, void 0, Promise, function () {
+            var discountsForProducts, settleProductsWithNewDiscounts, productsAndDiscountsPromise, _i, productsAndDiscountsPromise_1, result, ex_8;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        discountsForProducts = [];
+                        settleProductsWithNewDiscounts = productDiscounts.map(function (productAndDiscount) { return _this.createOrUseExistingDiscountForProduct(productAndDiscount); });
+                        return [4 /*yield*/, Promise.allSettled(settleProductsWithNewDiscounts)];
+                    case 1:
+                        productsAndDiscountsPromise = _a.sent();
+                        for (_i = 0, productsAndDiscountsPromise_1 = productsAndDiscountsPromise; _i < productsAndDiscountsPromise_1.length; _i++) {
+                            result = productsAndDiscountsPromise_1[_i];
+                            if (result.status === "fulfilled" && result.value) {
+                                discountsForProducts.push(result.value);
+                            }
+                        }
+                        return [2 /*return*/, discountsForProducts];
+                    case 2:
                         ex_8 = _a.sent();
                         this.eventTracer.isExceptionWithMessage("" + ex_8);
                         throw ex_8;
-                    case 6: return [2 /*return*/];
+                    case 3: return [2 /*return*/];
                 }
             });
         }); };
@@ -818,7 +807,7 @@ var ProductService = /** @class */ (function () {
                         return [4 /*yield*/, this.productRepository.contains({ _id: ids }, { discounts: true })];
                     case 1:
                         productsWithDiscount = _a.sent();
-                        return [4 /*yield*/, this.convertProductsToProductResponse(productsWithDiscount, true)];
+                        return [4 /*yield*/, this.convertProductsToProductResponse(productsWithDiscount, { includeDiscountAndDiscountPrice: true })];
                     case 2:
                         response = _a.sent();
                         return [2 /*return*/, response];
@@ -847,7 +836,7 @@ var ProductService = /** @class */ (function () {
                         return [4 /*yield*/, this.productRepository.getAsync({ discounts: discountId })];
                     case 3:
                         specialOrderProducts = _a.sent();
-                        return [4 /*yield*/, this.convertProductsToProductResponse(specialOrderProducts, true)];
+                        return [4 /*yield*/, this.convertProductsToProductResponse(specialOrderProducts, { includeDiscountAndDiscountPrice: true })];
                     case 4:
                         specialOrderProductsResponse = _a.sent();
                         productsWithDiscounts = __spreadArrays(productsWithDiscounts, specialOrderProductsResponse);
@@ -863,6 +852,122 @@ var ProductService = /** @class */ (function () {
                         this.eventTracer.isExceptionWithMessage("" + ex_9);
                         throw ex_9;
                     case 8: return [2 /*return*/];
+                }
+            });
+        }); };
+        this.addProductsWithDiscountToSpecialOffer = function (specialOfferId, productDiscounts) { return __awaiter(_this, void 0, Promise, function () {
+            var specialOffer, appliedDiscountsAndProducts, addedDiscountsToSpecialOffers, ex_10;
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 4, , 5]);
+                        this.eventTracer.say("AddProductsWithDiscountToSpecialOffer: Getting special offer " + specialOfferId);
+                        this.eventTracer.request = productDiscounts;
+                        return [4 /*yield*/, this.discountService.getSpecialOffer(specialOfferId)];
+                    case 1:
+                        specialOffer = _b.sent();
+                        if (!specialOffer) {
+                            throw new not_found_exception_1["default"]("Special offer with id " + specialOfferId + " not found");
+                        }
+                        return [4 /*yield*/, this.applyDiscountsToProducts(productDiscounts)];
+                    case 2:
+                        appliedDiscountsAndProducts = _b.sent();
+                        this.eventTracer.say("Applied Discounts length: " + ((_a = appliedDiscountsAndProducts === null || appliedDiscountsAndProducts === void 0 ? void 0 : appliedDiscountsAndProducts.length) !== null && _a !== void 0 ? _a : 0));
+                        return [4 /*yield*/, this.discountService.addDiscountsToSpecialOffer(specialOfferId, appliedDiscountsAndProducts.map(function (discountAndProduct) { return new mongoose_1.Types.ObjectId(discountAndProduct.discountId); }))];
+                    case 3:
+                        addedDiscountsToSpecialOffers = _b.sent();
+                        this.eventTracer.isSuccessWithResponseAndMessage(addedDiscountsToSpecialOffers);
+                        return [2 /*return*/, addedDiscountsToSpecialOffers];
+                    case 4:
+                        ex_10 = _b.sent();
+                        this.eventTracer.isExceptionWithMessage("" + ex_10);
+                        throw ex_10;
+                    case 5: return [2 /*return*/];
+                }
+            });
+        }); };
+        this.bestSellers = function (query) { return __awaiter(_this, void 0, Promise, function () {
+            var useQuery, response, items;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        useQuery = {};
+                        if (query.categoryId) {
+                            useQuery.categories = new mongoose_1.Types.ObjectId(query.categoryId);
+                        }
+                        return [4 /*yield*/, this.productRepository.toPagedAsync(useQuery, query.page, query.pageSize, { "inventory.qtySold": -1 })];
+                    case 1:
+                        response = _a.sent();
+                        return [4 /*yield*/, Promise.allSettled(response.items.map(function (item) { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, this.convertProductToProductResponseAsync(item, { includeDiscountAndDiscountPrice: true })];
+                                    case 1: return [2 /*return*/, _a.sent()];
+                                }
+                            }); }); }))];
+                    case 2:
+                        items = (_a.sent())
+                            .map(function (item) {
+                            if (item.status === "fulfilled" && item.value) {
+                                return item.value;
+                            }
+                        })
+                            .filter(function (item) { return item; });
+                        return [2 /*return*/, new pagination_result_1.PaginationResponse(__assign(__assign({}, response), { items: items }))];
+                }
+            });
+        }); };
+        this.setProductsAvailabilityPriceAndCurrencyForCartItems = function (items) { return __awaiter(_this, void 0, Promise, function () {
+            var allProducts, allProductsWithOnlyIds, _i, items_1, item, product, productsResponse, productResponseDict, returnResponse, _a, items_2, item, product, productId, productResponse;
+            var _b, _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        allProducts = [];
+                        allProductsWithOnlyIds = [];
+                        for (_i = 0, items_1 = items; _i < items_1.length; _i++) {
+                            item = items_1[_i];
+                            product = item.product;
+                            if (product instanceof mongoose_1.Types.ObjectId || typeof (product) === "string") {
+                                product = new mongoose_1.Types.ObjectId(product);
+                                allProductsWithOnlyIds.push(product);
+                            }
+                            else {
+                                allProducts.push(product);
+                            }
+                        }
+                        return [4 /*yield*/, this.getProductsWithDiscountedPriceByIds(__spreadArrays(allProductsWithOnlyIds, allProducts.map(function (prod) { return prod._id; })))];
+                    case 1:
+                        productsResponse = _d.sent();
+                        productResponseDict = {};
+                        productsResponse.forEach(function (productResponse) {
+                            productResponseDict[productResponse._id.toString()] = productResponse;
+                        });
+                        returnResponse = [];
+                        for (_a = 0, items_2 = items; _a < items_2.length; _a++) {
+                            item = items_2[_a];
+                            product = item.product;
+                            productId = product instanceof mongoose_1.Types.ObjectId || typeof (product) === "string" ? product.toString() : (_c = (_b = product._id) === null || _b === void 0 ? void 0 : _b.toString()) !== null && _c !== void 0 ? _c : '';
+                            productResponse = productResponseDict[productId];
+                            if (item instanceof cart_request_1.CreateCartItemRequest) {
+                                item = new cart_1.CartItem(__assign(__assign({}, item), { product: new mongoose_1.Types.ObjectId(item.product), status: item_status_1.ItemStatus.UNAVAILABLE, priceAtOrder: 0, currency: "" }));
+                            }
+                            if (!productResponse) {
+                                item.status = item_status_1.ItemStatus.UNAVAILABLE;
+                                continue;
+                            }
+                            item.priceAtOrder = productResponse.discountedPrice;
+                            item.currency = productResponse.currency;
+                            if (item.qty > productResponse.inventory.qtyAvailable) {
+                                item.status = item_status_1.ItemStatus.QTY_NOT_AVAILABLE;
+                            }
+                            else {
+                                item.status = item_status_1.ItemStatus.AVAILABLE;
+                            }
+                            returnResponse.push(item);
+                        }
+                        return [2 /*return*/, returnResponse];
                 }
             });
         }); };

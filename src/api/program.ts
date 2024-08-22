@@ -51,7 +51,24 @@ import BillboardService from '../core/application/services/shop/billboard_servic
 import { IISpecialOfferRepository } from '../core/application/contract/data_access/shop/special_offer_repository';
 import SpecialOfferRepository from '../core/infrastructure/persistence/data_access/shop/special_offer_repository';
 import { IIJwtService } from '../core/application/contract/services/authentication/jwt_service';
-import JwtService from '../core/infrastructure/services/files/jwt_service';
+import JwtService from '../core/infrastructure/services/authentication/jwt_service';
+import IRedisConfig, { IIRedisConfig } from '../core/application/common/config/redis_config';
+import { IICacheService } from '../core/application/contract/services/cache/cache_service';
+import { RedisCache } from '../core/infrastructure/services/cache/redis_cache_service';
+import { IIEventService } from '../core/application/contract/services/events/event_service';
+import RedisEventService from '../core/infrastructure/services/events/events_service';
+import { IICatalogueService } from '../core/application/contract/services/shop/catalogue_service';
+import CatalogueService from '../core/application/services/shop/catalogue_service';
+import { IICatalogueRepository } from '../core/application/contract/data_access/shop/catalogue_repository';
+import CatalogueRepository from '../core/infrastructure/persistence/data_access/shop/catalogue_repository';
+import { IIBrandService } from '../core/application/contract/services/shop/brand_service';
+import BrandService from '../core/application/services/shop/brand_service';
+import { IIBrandRepository } from '../core/application/contract/data_access/shop/brand_repository';
+import BrandRepository from '../core/infrastructure/persistence/data_access/shop/brand_repository';
+import { IIBrandLogic } from '../core/application/contract/logic/shop/brand_logic';
+import BrandLogic from '../core/application/logic/shop/brand_logic';
+import { IICategoryLogic } from '../core/application/contract/logic/shop/category_logic';
+import CategoryLogic from '../core/application/logic/shop/category_logic';
 
 dotenv.config();
 
@@ -65,6 +82,10 @@ var cloudinaryConfig : ICloudinaryConfig = {
   CLOUD_NAME: env.CLOUD_NAME,
   API_KEY: env.API_KEY,
   API_SECRET: env.API_SECRET
+}
+
+var redisConfig : IRedisConfig = {
+  REDIS_URL: env.REDIS_URL ?? ''
 }
 container.register(IILogger, {
     useClass: Logger
@@ -129,6 +150,10 @@ container.register(IISpecialOfferRepository, {
   useClass: SpecialOfferRepository
 })
 
+container.register(IICatalogueRepository, {
+  useClass: CatalogueRepository
+})
+
 container.register(IICategoryService, {
   useClass: CategoryService
 })
@@ -153,6 +178,10 @@ container.register(IIBillboardService, {
   useClass: BillboardService
 })
 
+container.register(IICatalogueService, {
+  useClass: CatalogueService
+})
+
 container.register(IIServiceConfig, {
   useValue: serviceConfig
 })
@@ -161,12 +190,40 @@ container.register(IICloudinaryConfig, {
   useValue: cloudinaryConfig
 })
 
+container.register(IIRedisConfig, {
+  useValue: redisConfig
+})
+
 container.register(IIFileService, {
   useClass: CloudinaryService
 })
 
 container.register(IIJwtService, {
   useClass: JwtService
+})
+
+container.register(IICacheService, {
+  useClass: RedisCache
+})
+
+container.register(IIEventService, {
+  useClass: RedisEventService
+})
+
+container.register(IIBrandService, {
+  useClass: BrandService
+})
+
+container.register(IIBrandRepository, {
+  useClass: BrandRepository
+})
+
+container.register(IIBrandLogic, {
+  useClass: BrandLogic
+})
+
+container.register(IICategoryLogic, {
+  useClass: CategoryLogic
 })
 
 

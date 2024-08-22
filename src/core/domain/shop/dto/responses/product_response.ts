@@ -7,6 +7,6 @@ export class ProductResponse extends Product {
 
     public discountedPrice: number = 0;
     public applieddiscounts: Discount[] = [];
-
+    
     
 }

@@ -1,3 +1,4 @@
+import { SortOrder } from "../../../../domain/common/enum/sort_order";
 import { PaginationResponse } from "../../../../domain/authentication/dto/results/pagination_result";
 import BaseEntity from "../../../../domain/common/entity/base_entity";
 
@@ -6,8 +7,8 @@ export default interface IBaseRepository<TEntity extends BaseEntity<TId>, TId> {
     addManyAsync(entities: TEntity[]): Promise<TEntity[]>;
 
     getByIdAsync(id: TId, joins?: Partial<{[k in keyof TEntity]: boolean}> ): Promise<TEntity | null>;
-    getAsync(query?: Partial<{[k in keyof TEntity]: any}>, joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity[]>;
-    getPagedAsync(query: Partial<{[k in keyof TEntity]: any}>, lastItemId: TId | null, pageSize?: number) : Promise<TEntity[]>;
+    getAsync(query?: Partial<{[k in keyof TEntity]: any}>, joins?: Partial<{[k in keyof TEntity]: boolean}>, sort?: {[key: string]: SortOrder}): Promise<TEntity[]>;
+    getPagedAsync(query: Partial<{[k in keyof TEntity]: any}>, lastItemId: TId | null, pageSize?: number,  sort?: {[key: string]: any}) : Promise<TEntity[]>;
     toPagedAsync(query: Partial<{[k in keyof TEntity]: any}>, page: number, pageSize: number, sort?: {[k: string]: any} | string): Promise<PaginationResponse<TEntity>>
     firstOrDefaultAsync (query: Partial<{[k in keyof TEntity]: any}>, joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity | null>
 
@@ -21,4 +22,6 @@ export default interface IBaseRepository<TEntity extends BaseEntity<TId>, TId> {
     contains(query: Partial<{[k in keyof TEntity]: any[]}>, joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity[]> 
 
     or (queries: Partial<{[k in keyof TEntity]: any}>[], joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity[]>;
+    addToFieldsList(query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[]}>): Promise<number>
+    removeFromFieldsList(query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[]}>): Promise<number>
 }
