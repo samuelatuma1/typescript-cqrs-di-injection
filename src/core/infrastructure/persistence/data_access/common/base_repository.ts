@@ -110,27 +110,67 @@ export class BaseRepository<TEntity extends BaseEntity<TId>, TId> implements IBa
         return 0;
     }
 
-    addToFieldsList = async (query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[]}>): Promise<number> => {
+    private buildAddToFieldsQuery = (fields: Partial<{[key in keyof TEntity]: any[]}>): {$addToSet: Partial<{[key in keyof TEntity]: {$each: any[]}}> }=> {
         let addToSetQuery: Partial<{[key in keyof TEntity]: {$each: any[]}}> = {}
         for(let [key, values] of Object.entries(fields)){
             addToSetQuery[key as keyof TEntity] = {$each: values}
             console.log({$each: values})
         }
-        console.log({query, $addToSet: addToSetQuery})
-        let updatedResponse = await this._model.updateMany(query, {$addToSet: addToSetQuery})
+        return {$addToSet: addToSetQuery}
+    }
+    addToFieldsList = async (query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[]}>): Promise<number> => {
+        let update = this.buildAddToFieldsQuery(fields);
+        let updatedResponse = await this._model.updateMany(query, update)
         console.log({updatedResponse})
         return updatedResponse.modifiedCount;
     }
-
-    removeFromFieldsList = async (query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[]}>): Promise<number> => {
-        let deleteFromFieldListQuery: Partial<{[key in keyof TEntity]: {$in: any[]}}> = {}
+    private buildRemoveFromFieldsQuery = (fields: Partial<{[key in keyof TEntity]: any[] | {[key: string]: any}}>): {$pull: Partial<{[key in keyof TEntity]: ({$in: any[]} | {[key: string]: any} )}> }=>{
+        let deleteFromFieldListQuery: Partial<{[key in keyof TEntity]: ({$in: any[]} | {[key: string]: any})}> = {}
+        
         for(let [key, values] of Object.entries(fields)){
-            deleteFromFieldListQuery[key as keyof TEntity] = {$in: values}
+            if(Array.isArray(values)){
+                deleteFromFieldListQuery[key as keyof TEntity] = {$in: values}
+            }
+            else{
+                deleteFromFieldListQuery[key as keyof TEntity] = values as {[key: string]: any}
+            }
         }
-        console.log({$pull: deleteFromFieldListQuery})
-        let updatedResponse = await this._model.updateMany(query, {$pull: deleteFromFieldListQuery})
+        return {$pull: deleteFromFieldListQuery}
+    }
+    removeFromFieldsList = async (query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[] | {[key: string]: any}}>): Promise<number> => {
+        let update = this.buildRemoveFromFieldsQuery(fields)
+        let updatedResponse = await this._model.updateMany(query, update)
         console.log(updatedResponse)
         return updatedResponse.modifiedCount;
+    }
+
+    addAndRemoveFromFieldsList = async (query: Partial<{[k in keyof TEntity]: any}>, addToFields: Partial<{[key in keyof TEntity]: any[]}>, removeFromField: Partial<{[key in keyof TEntity]: any[] | {[key: string]: any}}>): Promise<number> => {
+        let addFieldsQuery = this.buildAddToFieldsQuery(addToFields);
+        let removeFieldsQuery = this.buildRemoveFromFieldsQuery(removeFromField);
+
+        let addAndRemoveUpdate = {...addFieldsQuery, ...removeFieldsQuery};
+        let addKeys = new Set();
+        let shouldUpdateaddAndRemoveFieldsSeparately: boolean = false;
+        for(let key in addFieldsQuery.$addToSet){
+            addKeys.add(key.toString())
+        }
+        for(let key in removeFieldsQuery.$pull){
+            if(addKeys.has(key.toString())){
+                shouldUpdateaddAndRemoveFieldsSeparately = true
+            }
+        }
+
+        console.log({addAndRemoveUpdate})
+
+        if(!shouldUpdateaddAndRemoveFieldsSeparately){
+            let updatedResponse = await this._model.updateMany(query, addAndRemoveUpdate)
+            return updatedResponse.modifiedCount;
+        }
+        else{
+            console.log("Updating separately")
+            await this._model.updateMany(query, addFieldsQuery);
+            await this._model.updateMany(query, removeFieldsQuery);
+        }
     }
 
     deleteManyAsync = async (query: {[key in keyof Partial<TEntity>]: any}, soft: boolean = true): Promise<number> => {

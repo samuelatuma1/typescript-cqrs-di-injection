@@ -43,6 +43,7 @@ exports.ProductSchema = new mongoose_1.Schema({
     discounts: { type: [mongoose_1.Schema.Types.ObjectId], ref: 'Discount' },
     isPack: { type: Boolean, "default": false },
     packProducts: { type: [PackProductSchema] },
-    brandId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Brand', "default": null }
+    brandId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Brand', "default": null },
+    tags: { type: [String], "default": [] }
 });
 exports.productModel = mongoose_1.model('Product', exports.ProductSchema);

@@ -4,11 +4,8 @@ import { commandOptions, createClient, RedisClientType } from "redis";
 import { inject, injectable } from "tsyringe";
 import IEventTracer, { IIEventTracer } from "../../../application/contract/observability/event_tracer";
 import IEventService from "../../../application/contract/services/events/event_service";
-import { listenToStreamOptions } from "../../../domain/model/events/subscribe_event_options";
-
-
-
-
+import { EventQueueSizeStrategyMaxLength, EventQueueSizeStrategyRetention, listenToQueueOptions } from "../../../domain/model/events/subscribe_event_options";
+import DateUtility from "../../../application/common/utilities/date_utility";
 
 @injectable()
 export default class RedisEventService implements IEventService {
@@ -36,15 +33,30 @@ export default class RedisEventService implements IEventService {
         }
       }
 
-    public addMessage = async (streamName: string, message: any): Promise<string | null> => {
+    ///
+    public publishToQueue = async (queueName: string, message: any, options?: EventQueueSizeStrategyRetention | EventQueueSizeStrategyMaxLength): Promise<string | null> => {
         try{
             let connection = await this.getRedisConnection();
             if(!connection){
                 return null;
             }
             let dataPack = {data: SerializationUtility.serializeJson(message)};
+            console.log({dataPack})
             let id = '*';
-            let messageId = await connection.xAdd(streamName, id, dataPack);
+            let messageId = await connection.xAdd(queueName, id, dataPack);
+            if(options){
+                console.log({options})
+                if(options instanceof EventQueueSizeStrategyMaxLength){
+                    connection.xTrim(queueName, "MAXLEN", options.maxLength) // No need to await this execution
+                }
+                else if(options instanceof EventQueueSizeStrategyRetention){
+                    let unixTimeinMilliseconds = DateUtility.getUnixTimeInMilliseconds();
+                    let computedMinId = unixTimeinMilliseconds - DateUtility.getMillisecondsInTime(options.duration, options.unit);
+                    // let id = `${computedMinId}-0`
+                    connection.xTrim(queueName, "MINID", computedMinId)
+                }
+            }
+            
             return messageId;
         }
         catch(ex){
@@ -53,7 +65,7 @@ export default class RedisEventService implements IEventService {
         }
     }
 
-    public subscribe = async (options: listenToStreamOptions): Promise<void> => {
+    public subscribeToQueue = async (options: listenToQueueOptions): Promise<void> => {
         let connection = await this.getRedisConnection();
         if(!connection){
             return ;
@@ -61,13 +73,15 @@ export default class RedisEventService implements IEventService {
         const idInitialPosition = '0';
         console.log({options})
         
-        // if stream has not been created create consumer group
-        if(!(await connection.exists(options.streamName))){ 
-            await connection.xGroupCreate(options.streamName, options.consumerGroupName, idInitialPosition, {MKSTREAM: true} )
+        // if consumer group has not been created create consumer group
+        if(!(await connection.exists(options.queueName))){ 
+            this.eventTracer.say(`Creating new Consumer group with name ${options.consumerGroupName} for queue ${options.queueName}`)
+
+            await connection.xGroupCreate(options.queueName, options.consumerGroupName, idInitialPosition, {MKSTREAM: true} )
         }
 
         let stream = {
-            key: options.streamName,
+            key: options.queueName,
             id: '>', // Next entry ID that no consumer in this group has read
         };
         
@@ -92,11 +106,27 @@ export default class RedisEventService implements IEventService {
             if (dataArr && dataArr.length){
                 for(let data of dataArr){
                     const streamKeyName = data.name;
-                    if(streamKeyName === options.streamName){
+                    if(streamKeyName === options.queueName){
                         for(let message of data.messages){
                             //trigger appropriate action callback for each message
-                            await options.messageHandler(message, message.id)
-                            await connection.xAck(options.streamName, options.consumerGroupName, message.id)
+                            let callBack = await options.messageHandler(message.message, message.id)
+                            if(!callBack){
+                                 // Add to dead-letter queue if failed to process after a while
+                                if(options.saveFailedProcessesToDeadLetterQueue){
+                                    let retryCount = 1;
+                                    let maxRetryCount = options.saveFailedProcessesToDeadLetterQueue.maxReprocessRetry;
+                                    while(!callBack  && retryCount < maxRetryCount){
+                                        callBack = await options.messageHandler(message.message, message.id)
+                                        retryCount++;
+                                    }
+                                    if(retryCount >= maxRetryCount){
+                                        let dlqName = options.saveFailedProcessesToDeadLetterQueue.deadLetterQueueName;
+
+                                        await this.publishToQueue(dlqName, message, options.saveFailedProcessesToDeadLetterQueue.sizeStrategy);
+                                    }
+                                }
+                            }
+                            await connection.xAck(options.queueName, options.consumerGroupName, message.id)
                         }
 
                     }

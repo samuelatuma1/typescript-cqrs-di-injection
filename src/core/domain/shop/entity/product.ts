@@ -24,7 +24,8 @@ export interface ProductInit {
      discounts?:  Discount[] | Types.ObjectId[];
     isPack?: boolean; 
     packProducts?: PackProduct[]
-    brandId?: Types.ObjectId | null
+    brandId?: Types.ObjectId | null;
+    tags?: string[]
 }
 
 export class PackProduct{
@@ -55,6 +56,7 @@ export default class Product extends BaseEntity<Types.ObjectId> {
     public packProducts?: PackProduct[];
     public catalogues: Catalogue[] | Types.ObjectId[];
     public brandId?: Types.ObjectId | null;
+    public tags: string[] = [];
     public constructor(init: ProductInit){
         const id = new Types.ObjectId();
         super(id);
@@ -73,6 +75,7 @@ export default class Product extends BaseEntity<Types.ObjectId> {
         this.isPack = init.isPack ?? false;
         this.packProducts = init.packProducts ?? [];
         this.brandId = init.brandId ?? null;
+        this.tags = init.tags ?? [];
     }
 
 }

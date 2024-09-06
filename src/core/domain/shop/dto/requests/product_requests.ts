@@ -5,6 +5,7 @@ import { Currency } from "../../../../domain/common/enum/currency";
 import ProductExtra from "../../entity/product_extra";
 import { CreateDiscountRequest } from "./discount_request";
 import Pagination from "../../../../domain/common/dto/requests/paginate_request";
+import { UpdateProductInventoryType } from "../../enum/update_product_inventory_type";
 
 export class CreateFilterForProduct {
     name?: string;
@@ -24,6 +25,7 @@ export interface CreateProductRequestInit {
     extras: ProductExtra[];
     isPack?: boolean;
     brandId?: Types.ObjectId | string;
+    tags?: string[];
 
 }
 export class CreateProductRequest {
@@ -39,7 +41,7 @@ export class CreateProductRequest {
     public extras: ProductExtra[] = [];
     brandId: Types.ObjectId | string;
     public isPack: boolean = false;
-
+    public tags?: string[] = []
     public constructor(init: CreateProductRequestInit | null = null ){
         this.name = init?.name;
         this.desc = init?.desc ?? "";
@@ -53,6 +55,7 @@ export class CreateProductRequest {
         this.extras = init?.extras ?? [];
         this.isPack = init?.isPack ?? false;
         this.brandId = init?.brandId ?? null;
+        this.tags = init?.tags ?? []
     }
 }
 
@@ -71,18 +74,29 @@ export class UpdatePackProduct{
     public otherMedia?: UploadFile[];
     public qty?: number = 1;
 }
+
+
+export class UpdateProductInventory {
+    qty: number;
+    updateType: UpdateProductInventoryType
+}
 export class UpdateProductRequest {
     public name?: string;
     public desc?: string;
     // public mainImg?: UploadFile;
     // public otherMedia?: UploadFile[];
-    public inventory?: ProductInventory;
+    public inventory?: UpdateProductInventory;
     public price?: number = 0;
     public currency?: Currency | string = Currency.NGN;
     public filters?: {[key: string]: CreateFilterForProduct};
-    public categories?: string[] | Types.ObjectId[];
-    public extras?: ProductExtra[];
+    public addCategories?: string[] | Types.ObjectId[];
+    public removeCategories?: string[] | Types.ObjectId[];
+    // public extras?: ProductExtra[];
     public brandId?: Types.ObjectId | null = null;
+    public addTags?: string[] = [];
+    public removeTags?: string[] = [];
+    public addExtras?: ProductExtra[] = [];
+    public removeExtras?: ProductExtra[] = [];
 }
 
 

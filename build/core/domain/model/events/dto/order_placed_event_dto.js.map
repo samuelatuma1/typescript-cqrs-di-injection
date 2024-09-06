@@ -1,0 +1,1 @@
+{"version":3,"file":"order_placed_event_dto.js","sourceRoot":"","sources":["../../../../../../src/core/domain/model/events/dto/order_placed_event_dto.ts"],"names":[],"mappings":";;AAEA,MAAqB,mBAAmB;IAC7B,OAAO,CAAiB;IACxB,SAAS,CAAM;IACtB,YAAmB,IAAgD;QAC/D,IAAI,CAAC,OAAO,GAAG,IAAI,CAAC,OAAO,CAAC;QAC5B,IAAI,CAAC,SAAS,GAAG,IAAI,CAAC,SAAS,CAAC;IACpC,CAAC;CACJ;AAPD,sCAOC"}

@@ -136,7 +136,6 @@ var BrandLogic = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         this.eventTracer.say("Add Product to Brand");
-                        console.log("Iscaba");
                         return [4 /*yield*/, this.brandService.getBrand(new mongoose_1.Types.ObjectId(brandId))];
                     case 1:
                         brand = _a.sent();
@@ -150,7 +149,7 @@ var BrandLogic = /** @class */ (function () {
                         return [4 /*yield*/, this.productRepository.updateManyAsync({ _id: { $in: products.map(function (prod) { return prod._id; }) } }, { brandId: new mongoose_1.Types.ObjectId(brandId) })];
                     case 3:
                         _a.sent();
-                        return [4 /*yield*/, this.getBrand((new mongoose_1.Types.ObjectId(brandId)))];
+                        return [4 /*yield*/, this.getBrand((new mongoose_1.Types.ObjectId(brandId)), { includeProducts: true, includeCategories: true, includeFilters: true })];
                     case 4: return [2 /*return*/, _a.sent()];
                 }
             });

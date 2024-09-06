@@ -9,6 +9,7 @@ export default class JwtService implements IJwtService{
     }
 
     public  decode<T>(token: string,  secret: string): T {
+        console.log({token})
         return jwt.verify(token, secret) as T;
     }
 }

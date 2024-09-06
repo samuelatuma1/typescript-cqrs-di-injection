@@ -286,6 +286,7 @@ var CategoryService = /** @class */ (function () {
                     case 0:
                         _a.trys.push([0, 5, , 6]);
                         this.eventTracer.say("Adding filters to category");
+                        console.log({ filtersRequest: filtersRequest, categoryId: categoryId });
                         this.eventTracer.request = filtersRequest;
                         return [4 /*yield*/, this.getCategoryByIdOrThrowException(categoryId)];
                     case 1:

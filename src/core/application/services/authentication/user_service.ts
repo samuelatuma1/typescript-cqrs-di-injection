@@ -412,7 +412,7 @@ export default class UserService implements IUserService {
         return this.jwtService.decode<AccessTokenPayload>(token, this.serviceConfig.jwtsecret);
        }
        catch(ex){
-        
+        this.eventTracer.isExceptionWithMessage(`${ex}`)
         return null;
        }
     }

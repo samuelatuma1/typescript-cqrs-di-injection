@@ -159,6 +159,7 @@ export default class CategoryService implements ICategoryService{
     public addFiltersToCategory = async (categoryId: Types.ObjectId, filtersRequest: CreateFilterRequest[]): Promise<Category> => {
         try{
             this.eventTracer.say(`Adding filters to category`)
+            console.log({filtersRequest, categoryId})
             this.eventTracer.request = filtersRequest;
             let category = await this.getCategoryByIdOrThrowException(categoryId);
             let existingFiltersDict: {[key: string]: Filter} = {};

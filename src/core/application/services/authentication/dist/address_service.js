@@ -70,6 +70,8 @@ var state_repository_1 = require("../../../application/contract/data_access/auth
 var address_1 = require("../../../domain/authentication/entity/address");
 var address_repository_1 = require("../../../application/contract/data_access/authentication/address_repository");
 var event_tracer_1 = require("../../../application/contract/observability/event_tracer");
+var mongoose_1 = require("mongoose");
+var not_found_exception_1 = require("../../../application/common/exceptions/not_found_exception");
 var AddressService = /** @class */ (function () {
     function AddressService(cityRepository, countryRepository, stateRepository, addressRepository, eventTracer) {
         var _this = this;
@@ -218,6 +220,48 @@ var AddressService = /** @class */ (function () {
                         this.eventTracer.isExceptionWithMessage("" + ex_3);
                         throw ex_3;
                     case 10: return [2 /*return*/];
+                }
+            });
+        }); };
+        this.getOrCreateAddress = function (address) { return __awaiter(_this, void 0, Promise, function () {
+            var streetNo, street, extraDetails, phone, city, cityQuery, savedCity, state, savedAddress;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(address instanceof mongoose_1.Types.ObjectId || typeof (address) === 'string')) return [3 /*break*/, 2];
+                        address = new mongoose_1.Types.ObjectId(address);
+                        return [4 /*yield*/, this.addressRepository.getByIdAsync(address)];
+                    case 1: return [2 /*return*/, _a.sent()];
+                    case 2:
+                        streetNo = address.streetNo, street = address.street, extraDetails = address.extraDetails, phone = address.phone, city = address.city;
+                        cityQuery = city;
+                        if (!(city instanceof mongoose_1.Types.ObjectId)) return [3 /*break*/, 4];
+                        return [4 /*yield*/, this.cityRepository.getByIdAsync(new mongoose_1.Types.ObjectId(city))];
+                    case 3:
+                        savedCity = _a.sent();
+                        if (!savedCity) {
+                            throw new not_found_exception_1["default"]("City not found");
+                        }
+                        return [3 /*break*/, 7];
+                    case 4: return [4 /*yield*/, this.stateRepository.firstOrDefaultAsync({ code: cityQuery.state })];
+                    case 5:
+                        state = _a.sent();
+                        return [4 /*yield*/, this.cityRepository.firstOrDefaultAsync({ code: cityQuery.code, state: state === null || state === void 0 ? void 0 : state._id })];
+                    case 6:
+                        savedCity = _a.sent();
+                        if (!savedCity) {
+                            throw new not_found_exception_1["default"]("City not found");
+                        }
+                        _a.label = 7;
+                    case 7: return [4 /*yield*/, this.addressRepository.firstOrDefaultAsync({ streetNo: streetNo, street: street, city: savedCity._id, phone: phone, extraDetails: extraDetails })];
+                    case 8:
+                        savedAddress = _a.sent();
+                        if (savedAddress) {
+                            return [2 /*return*/, savedAddress];
+                        }
+                        address.city = savedCity._id;
+                        return [4 /*yield*/, this.addressRepository.addAsync(address)];
+                    case 9: return [2 /*return*/, _a.sent()];
                 }
             });
         }); };

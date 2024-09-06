@@ -64,27 +64,34 @@ var order_item_1 = require("../../../domain/shop/entity/order_item");
 var order_status_1 = require("../../../domain/shop/enum/order_status");
 var order_repository_1 = require("../../../application/contract/data_access/shop/order_repository");
 var item_status_1 = require("../../../domain/shop/enum/item_status");
+var order_service_producer_1 = require("../../../application/contract/services/events/shop/producer/order_service_producer");
+var date_utility_1 = require("../../../application/common/utilities/date_utility");
+var order_placed_event_dto_1 = require("../../../domain/model/events/dto/order_placed_event_dto");
+var address_service_1 = require("../../../application/contract/services/authentication/address_service");
 var OrderService = /** @class */ (function () {
-    function OrderService(eventTracer, userService, cartRepository, orderRepository, productService) {
+    function OrderService(eventTracer, userService, cartRepository, orderRepository, productService, orderServiceProducer, addressService) {
         var _this = this;
         this.eventTracer = eventTracer;
         this.userService = userService;
         this.cartRepository = cartRepository;
         this.orderRepository = orderRepository;
         this.productService = productService;
+        this.orderServiceProducer = orderServiceProducer;
+        this.addressService = addressService;
         this.transformCartItemsToOrderItems = function (cartItems) {
             return cartItems.map(function (cartItem) {
                 var orderEquivalent = new order_item_1["default"]({
                     product: cartItem.product,
                     qty: cartItem.qty,
                     priceAtOrder: cartItem.priceAtOrder,
-                    currency: cartItem.currency
+                    currency: cartItem.currency,
+                    status: cartItem.status
                 });
                 return orderEquivalent;
             });
         };
-        this.completeOrder = function (cart, paymentId, user, address) { return __awaiter(_this, void 0, void 0, function () {
-            var cartId, savedCart, isValidPayment, order, savedOrder;
+        this.completeOrder = function (cart, paymentId, user, address) { return __awaiter(_this, void 0, Promise, function () {
+            var cartId, savedCart, isValidPayment, savedAddress, order, savedOrder, orderPlacedEventDTO, orderPlacedEvent;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -93,23 +100,33 @@ var OrderService = /** @class */ (function () {
                     case 1:
                         savedCart = _a.sent();
                         isValidPayment = true;
+                        return [4 /*yield*/, this.addressService.getOrCreateAddress(address)];
+                    case 2:
+                        savedAddress = _a.sent();
                         order = new order_1["default"]({
                             orderItems: this.transformCartItemsToOrderItems(savedCart.cartItems),
                             totalAmount: savedCart.totalAmount,
                             payment: null,
                             user: null,
-                            address: address,
+                            address: savedAddress._id,
                             status: order_status_1.OrderStatus.PENDING,
                             currency: savedCart.currency
                         });
                         return [4 /*yield*/, this.orderRepository.addAsync(order)];
-                    case 2:
+                    case 3:
                         savedOrder = _a.sent();
-                        //TODO: Good place to create an event to handle notifying appropriate admin an order has been placed
+                        orderPlacedEventDTO = new order_placed_event_dto_1["default"]({
+                            orderId: savedOrder._id,
+                            createdAt: date_utility_1["default"].getUTCNow()
+                        });
+                        return [4 /*yield*/, this.orderServiceProducer.publishNewOrderCreatedEvent(orderPlacedEventDTO)];
+                    case 4:
+                        orderPlacedEvent = _a.sent();
+                        this.eventTracer.say(orderPlacedEvent ? "OrderPlaced event  with id " + orderPlacedEvent + " successful" : "Failed to initiate order placed event");
                         //TODO: Reduce quantities available for selected orders 
                         savedCart.isActive = false;
-                        return [4 /*yield*/, this.cartRepository.updateByIdAsync(savedCart._id, { isActive: false })];
-                    case 3:
+                        return [4 /*yield*/, this.cartRepository.updateByIdAsync(savedCart._id, { isActive: false, orderId: savedOrder._id })];
+                    case 5:
                         _a.sent();
                         return [2 /*return*/, savedOrder];
                 }
@@ -133,7 +150,7 @@ var OrderService = /** @class */ (function () {
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _b.trys.push([0, 7, , 8]);
+                        _b.trys.push([0, 8, , 9]);
                         this.eventTracer.say("Create Cart");
                         this.eventTracer.request = createCartRequest;
                         // get user by email
@@ -167,14 +184,18 @@ var OrderService = /** @class */ (function () {
                         _a = this.getTotal(mergedCartItems), total = _a.total, currency = _a.currency;
                         userCart.totalAmount = total;
                         userCart.currency = currency;
+                        userCart.cartItems = mergedCartItems;
                         this.eventTracer.isSuccessWithResponseAndMessage(userCart);
-                        return [4 /*yield*/, this.cartRepository.addAsync(userCart)];
-                    case 6: return [2 /*return*/, _b.sent()];
-                    case 7:
+                        return [4 /*yield*/, this.cartRepository.updateAsync(userCart)];
+                    case 6:
+                        _b.sent();
+                        return [4 /*yield*/, this.cartRepository.getByIdAsync(userCart._id)];
+                    case 7: return [2 /*return*/, _b.sent()];
+                    case 8:
                         ex_1 = _b.sent();
                         this.eventTracer.isErrorWithMessage("" + ex_1);
                         throw ex_1;
-                    case 8: return [2 /*return*/];
+                    case 9: return [2 /*return*/];
                 }
             });
         }); };
@@ -224,8 +245,9 @@ var OrderService = /** @class */ (function () {
                                 cartItemsProductIdDict[cartItemProductIdString] = cartItem;
                             }
                             else {
-                                // product already exists, add the  quantities to make a single product
-                                cartItemsProductIdDict[cartItemProductIdString].qty += cartItem.qty;
+                                // OPTION 1: product already exists, add the  quantities to make a single product
+                                // cartItemsProductIdDict[cartItemProductIdString].qty += cartItem.qty;
+                                // OPTION 2: ignore, since createcartitem request is most likely the orderer's new choice 
                             }
                         }
                         for (createItemProductKey in createCartItemsProductIdDict) {
@@ -240,6 +262,12 @@ var OrderService = /** @class */ (function () {
                 }
             });
         }); };
+        this.handleOrderCreatedEvent = function (orderCreatedDTO) { return __awaiter(_this, void 0, Promise, function () {
+            return __generator(this, function (_a) {
+                console.log({ handleOrderCreatedEvent: "Not implemented", orderCreatedDTO: orderCreatedDTO });
+                return [2 /*return*/, true];
+            });
+        }); };
     }
     OrderService = __decorate([
         tsyringe_1.injectable(),
@@ -247,7 +275,9 @@ var OrderService = /** @class */ (function () {
         __param(1, tsyringe_1.inject(user_service_1.IIUserService)),
         __param(2, tsyringe_1.inject(cart_repository_1.IICartRepository)),
         __param(3, tsyringe_1.inject(order_repository_1.IIOrderRepository)),
-        __param(4, tsyringe_1.inject(product_service_1.IIProductService))
+        __param(4, tsyringe_1.inject(product_service_1.IIProductService)),
+        __param(5, tsyringe_1.inject(order_service_producer_1.IIOrderServiceProducer)),
+        __param(6, tsyringe_1.inject(address_service_1.IIAddressService))
     ], OrderService);
     return OrderService;
 }());

@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 exports.__esModule = true;
-exports.BestSellersQuery = exports.ApplyProductToDiscount = exports.UpdateProductRequest = exports.UpdatePackProduct = exports.CreatePackProduct = exports.CreateProductRequest = exports.CreateFilterForProduct = void 0;
+exports.BestSellersQuery = exports.ApplyProductToDiscount = exports.UpdateProductRequest = exports.UpdateProductInventory = exports.UpdatePackProduct = exports.CreatePackProduct = exports.CreateProductRequest = exports.CreateFilterForProduct = void 0;
 var currency_1 = require("../../../../domain/common/enum/currency");
 var paginate_request_1 = require("../../../../domain/common/dto/requests/paginate_request");
 var CreateFilterForProduct = /** @class */ (function () {
@@ -25,7 +25,7 @@ exports.CreateFilterForProduct = CreateFilterForProduct;
 var CreateProductRequest = /** @class */ (function () {
     function CreateProductRequest(init) {
         if (init === void 0) { init = null; }
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
         this.mainImg = null;
         this.otherMedia = [];
         this.price = 0;
@@ -34,6 +34,7 @@ var CreateProductRequest = /** @class */ (function () {
         this.categories = [];
         this.extras = [];
         this.isPack = false;
+        this.tags = [];
         this.name = init === null || init === void 0 ? void 0 : init.name;
         this.desc = (_a = init === null || init === void 0 ? void 0 : init.desc) !== null && _a !== void 0 ? _a : "";
         this.mainImg = (_b = init === null || init === void 0 ? void 0 : init.mainImg) !== null && _b !== void 0 ? _b : null;
@@ -46,6 +47,7 @@ var CreateProductRequest = /** @class */ (function () {
         this.extras = (_j = init === null || init === void 0 ? void 0 : init.extras) !== null && _j !== void 0 ? _j : [];
         this.isPack = (_k = init === null || init === void 0 ? void 0 : init.isPack) !== null && _k !== void 0 ? _k : false;
         this.brandId = (_l = init === null || init === void 0 ? void 0 : init.brandId) !== null && _l !== void 0 ? _l : null;
+        this.tags = (_m = init === null || init === void 0 ? void 0 : init.tags) !== null && _m !== void 0 ? _m : [];
     }
     return CreateProductRequest;
 }());
@@ -64,11 +66,22 @@ var UpdatePackProduct = /** @class */ (function () {
     return UpdatePackProduct;
 }());
 exports.UpdatePackProduct = UpdatePackProduct;
+var UpdateProductInventory = /** @class */ (function () {
+    function UpdateProductInventory() {
+    }
+    return UpdateProductInventory;
+}());
+exports.UpdateProductInventory = UpdateProductInventory;
 var UpdateProductRequest = /** @class */ (function () {
     function UpdateProductRequest() {
         this.price = 0;
         this.currency = currency_1.Currency.NGN;
+        // public extras?: ProductExtra[];
         this.brandId = null;
+        this.addTags = [];
+        this.removeTags = [];
+        this.addExtras = [];
+        this.removeExtras = [];
     }
     return UpdateProductRequest;
 }());

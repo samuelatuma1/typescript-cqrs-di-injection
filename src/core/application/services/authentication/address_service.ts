@@ -3,10 +3,12 @@ import IAddressService from "../../../application/contract/services/authenticati
 import ICityRepository, { IICityRepository } from "../../../application/contract/data_access/authentication/city_repository";
 import ICountryRepository, { IICountryRepository } from "../../../application/contract/data_access/authentication/country_repository";
 import IStateRepository, { IIStateRepository } from "../../../application/contract/data_access/authentication/state_repository";
-import { City, Country, State } from "../../../domain/authentication/entity/address";
+import Address, { City, Country, State } from "../../../domain/authentication/entity/address";
 import IAddressRepository, { IIAddressRepository } from "../../../application/contract/data_access/authentication/address_repository";
 import { CreateCityRequest, CreateCountryRequest, CreateStateRequest } from "../../../domain/authentication/dto/requests/address_request";
 import IEventTracer, { IIEventTracer } from "../../../application/contract/observability/event_tracer";
+import { Types } from "mongoose";
+import NotFoundException from "../../../application/common/exceptions/not_found_exception";
 
 
 
@@ -111,5 +113,35 @@ export default class AddressService implements IAddressService {
             this.eventTracer.isExceptionWithMessage(`${ex}`)
             throw ex;
         }
+    }
+
+    public getOrCreateAddress = async (address: Address | Types.ObjectId | string): Promise<Address | null> => {
+        if(address instanceof Types.ObjectId || typeof(address) === 'string'){
+            address = new Types.ObjectId(address)
+            return await this.addressRepository.getByIdAsync(address)
+        }
+        let {streetNo, street, extraDetails, phone, city} = address;
+        let cityQuery = city as Partial<City>
+        let savedCity: City;
+        if(city instanceof Types.ObjectId){
+            savedCity = await this.cityRepository.getByIdAsync(new Types.ObjectId(city))
+            if(!savedCity){
+                throw new NotFoundException(`City not found`)
+            }
+            
+        }else{
+            let state = await this.stateRepository.firstOrDefaultAsync({code: cityQuery.state})
+            savedCity = await this.cityRepository.firstOrDefaultAsync({code: cityQuery.code, state: state?._id})
+            if(!savedCity){
+                throw new NotFoundException(`City not found`)
+            }
+        }
+
+        let savedAddress = await this.addressRepository.firstOrDefaultAsync({streetNo, street, city: savedCity._id, phone, extraDetails})
+        if(savedAddress){
+            return savedAddress
+        }
+        address.city = savedCity._id
+        return await this.addressRepository.addAsync(address)
     }
 }

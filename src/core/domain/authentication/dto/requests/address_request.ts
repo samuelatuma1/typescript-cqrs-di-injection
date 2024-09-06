@@ -1,3 +1,5 @@
+import { Types } from "mongoose";
+
 export class CreateCountryRequest {
     public name: string;
     public code: string; 
@@ -13,4 +15,12 @@ export class CreateCityRequest {
     public code: string; 
     public stateCode: string ;
     public countryCode: string ;
+}
+
+export class QueryCity {
+    public name?: string;
+    public code?: string; 
+    public stateCode?: string ;
+    public countryCode?: string ;
+    public _id?: Types.ObjectId 
 }

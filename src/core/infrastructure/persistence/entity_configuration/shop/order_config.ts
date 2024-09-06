@@ -19,7 +19,7 @@ export const OrderSchema = new Schema<Order>({
     currency: {type: String},
     // payment: {type: null},
     user: {type: Schema.Types.ObjectId, ref: 'User'},
-    address: {type: Schema.Types.ObjectId, ref: 'Address'}
+    address: {type: Schema.Types.ObjectId, ref: 'Address'},
 });
 
 export const orderModel = model('Order', OrderSchema);

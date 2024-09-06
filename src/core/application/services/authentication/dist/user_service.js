@@ -520,6 +520,7 @@ var UserService = /** @class */ (function () {
                 return _this.jwtService.decode(token, _this.serviceConfig.jwtsecret);
             }
             catch (ex) {
+                _this.eventTracer.isExceptionWithMessage("" + ex);
                 return null;
             }
         };

@@ -1,4 +1,4 @@
-import { ApplyProductToDiscount, BestSellersQuery, CreateFilterForProduct, CreatePackProduct, CreateProductRequest, UpdatePackProduct, UpdateProductRequest } from "../../../domain/shop/dto/requests/product_requests";
+import { ApplyProductToDiscount, BestSellersQuery, CreateFilterForProduct, CreatePackProduct, CreateProductRequest, UpdatePackProduct, UpdateProductInventory, UpdateProductRequest } from "../../../domain/shop/dto/requests/product_requests";
 import IProductService from "../../../application/contract/services/shop/product_service";
 import { inject, injectable } from "tsyringe";
 import IEventTracer, { IIEventTracer } from "../../../application/contract/observability/event_tracer";
@@ -24,6 +24,7 @@ import { PaginationResponse } from "../../../domain/authentication/dto/results/p
 import { CartItem } from "../../../domain/shop/entity/cart";
 import { ItemStatus } from "../../../domain/shop/enum/item_status";
 import { CreateCartItemRequest } from "../../../domain/shop/dto/requests/cart_request";
+import { UpdateProductInventoryType } from "../../../domain/shop/enum/update_product_inventory_type";
 
 
 
@@ -259,7 +260,7 @@ export default class ProductService implements IProductService {
         return this.convertProductToProductResponse(await this.productRepository.getByIdAsync(productId));
         // save
     }
-    private buildUpdateData = (product: Product, updateProductRequest: UpdateProductRequest): Partial<Product> => {
+    private buildUpdateDataForNonListFields = (product: Product, updateProductRequest: UpdateProductRequest): Partial<Product> => {
         const updateData: Partial<Product> = {};
     
         if (updateProductRequest.name && product.name !== updateProductRequest.name) {
@@ -274,34 +275,75 @@ export default class ProductService implements IProductService {
         if (updateProductRequest.currency && product.currency !== updateProductRequest.currency) {
             updateData.currency = updateProductRequest.currency;
         }
-        if (updateProductRequest.extras && updateProductRequest.extras.length) {
-            updateData.extras = updateProductRequest.extras;
+
+        if(updateProductRequest.inventory){
+            updateData.inventory = product.inventory;
+            updateData.inventory.qtyAvailable =  updateProductRequest.inventory.updateType === UpdateProductInventoryType.increment ?
+                 product.inventory.qtyAvailable + updateProductRequest.inventory.qty :
+                 product.inventory.qtyAvailable - updateProductRequest.inventory.qty; // we can only update the qty available
+            
         }
     
         return updateData;
     }
+    buildAddAndRemoveFieldListsForProduct = async (updateProductRequest: UpdateProductRequest) : Promise<{ addToFieldsUpdate: Partial<
+        {[key in keyof Product]: any[]}>, removeFromFieldsUpdate: Partial<{[key in keyof Product]: any[] | {[key: string]: any}}>}| null> => {
 
+        let addToFieldsUpdate: Partial<{[key in keyof Product]: any[]}> = {}
+            let removeFromFieldsUpdate: Partial<{[key in keyof Product]: any[] | {[key: string]: any}}> = {}
+            if(updateProductRequest.addTags){
+                addToFieldsUpdate.tags = updateProductRequest.addTags;
+            }
+            if(updateProductRequest.removeTags){
+                removeFromFieldsUpdate.tags = updateProductRequest.removeTags;
+            }
+
+            if(updateProductRequest.addExtras){
+                addToFieldsUpdate.extras = updateProductRequest.addExtras;
+            }
+            if(updateProductRequest.removeExtras){
+                removeFromFieldsUpdate.extras = {title: {$in: updateProductRequest.removeExtras.map(extra => extra.title)}};
+            }
+            if(updateProductRequest.addCategories){ // save only existing categories
+                let categoriesIds = updateProductRequest.addCategories.map(categoryId => new Types.ObjectId(categoryId));
+                let updatedCategories = await this.categoryService.getCategoriesByIds(categoriesIds, false);
+                addToFieldsUpdate.categories = updatedCategories.map(category => category._id);
+            }
+            if(updateProductRequest.removeCategories){
+                removeFromFieldsUpdate.categories = updateProductRequest.removeCategories.map(categoryId => new Types.ObjectId(categoryId));
+            }
+            if(!ObjectUtility.objectSize(addToFieldsUpdate) && !ObjectUtility.objectSize(removeFromFieldsUpdate)){
+                return null;
+            }
+            console.log({addToFieldsUpdate, removeFromFieldsUpdate})
+            return {
+                addToFieldsUpdate, removeFromFieldsUpdate
+            }
+    }
     updateProduct = async (productId: Types.ObjectId | string, updateProductRequest: UpdateProductRequest): Promise<Product> => {
         this.eventTracer.say("Updating Product");
         this.eventTracer.request = updateProductRequest
         try{
             // get orignial product
-            
-            let product = await this.getProductByIdOrRaiseException(productId);
+            this.eventTracer.say("Building fieldsListToUpdate")
+            let fieldsListToUpdate = await this.buildAddAndRemoveFieldListsForProduct(updateProductRequest)
+            let { addToFieldsUpdate, removeFromFieldsUpdate} = fieldsListToUpdate ?? {}
+            if(fieldsListToUpdate){
+                this.eventTracer.say("Updating fields having list")
+                await this.productRepository.addAndRemoveFromFieldsList({_id: productId}, addToFieldsUpdate, removeFromFieldsUpdate)
+            }
+
             this.eventTracer.say(`Product gotten for product with id ${productId}`);
             // check and update fields that changed
-            let updateData = this.buildUpdateData(product, updateProductRequest);
+            let product = await this.getProductByIdOrRaiseException(productId); // get product with updated fields list
+            let updateData = this.buildUpdateDataForNonListFields(product, updateProductRequest);
 
-            if(updateProductRequest.categories && updateProductRequest.categories.length){
-                let categoriesIds = updateProductRequest.categories.map(categoryId => new Types.ObjectId(categoryId));
-                let updatedCategories = await this.categoryService.getCategoriesByIds(categoriesIds, false);
-                updateData.categories = updatedCategories.map(category => category._id);
-            }
-            
             if(updateProductRequest.filters &&  ObjectUtility.objectSize(updateProductRequest.filters)){
-                let categoryIds = updateProductRequest.categories?.length ? updateProductRequest.categories : product.categories as Types.ObjectId[];
+                let categoryIds = [...product.categories as Types.ObjectId[], ...(addToFieldsUpdate?.categories ?? [])];
                 updateData.filters = await this.validateAndSetFiltersForProduct(categoryIds, updateProductRequest.filters)
             }
+
+            
             
             this.eventTracer.say(`Fields to update ${JSON.stringify(updateData)}`)
             await this.productRepository.updateByIdAsync(product._id, updateData);
@@ -330,7 +372,13 @@ export default class ProductService implements IProductService {
         productResponse._id = product._id;
         productResponse.packProducts = productResponse.packProducts?.filter(prod => !prod.isDeleted);
         if(options.includeDiscountAndDiscountPrice ?? false) {
+            
             productResponse = await this.getDiscountedPriceAndAppliedDiscountsForProduct(productResponse);
+            console.log("-----------------------------")
+            console.log("-----------------------------")
+            console.log({productResponse})
+            console.log("-----------------------------")
+            console.log("-----------------------------")
         }
         return productResponse
     }
@@ -347,7 +395,7 @@ export default class ProductService implements IProductService {
     }
 
     getProducts = async (getProductsQuery: {brandId: Types.ObjectId}, options?: {includeDiscountAndDiscountPrice: boolean, includeCategories?: boolean}): Promise<ProductResponse[]> => {
-        let products = await this.productRepository.getAsync(getProductsQuery, {categories: options.includeCategories});
+        let products = await this.productRepository.getAsync(getProductsQuery, {categories: options.includeCategories ?? false});
         let allProducts = await Promise.allSettled(products.map(async product => await this.convertProductToProductResponseAsync(product, {includeDiscountAndDiscountPrice: options.includeDiscountAndDiscountPrice ?? true})));
         return allProducts.map(
             item => {
@@ -448,12 +496,14 @@ export default class ProductService implements IProductService {
         try{
             console.log("We reach here")
             this.eventTracer.say(`Get Discounted Price And Applied DiscountsForProduct`)
-            if(!product.discounts.length){
-                return product;
-            }
+            
             let discountedPrice = product.price;
             let priceDiscount: number;
             product.discountedPrice = product.price;
+            if(!product.discounts.length){
+                return product;
+            }
+
             let activeDiscount = await this.getActiveDiscount(product);
             if(!activeDiscount){
                 return product;

@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.CreateCityRequest = exports.CreateStateRequest = exports.CreateCountryRequest = void 0;
+exports.QueryCity = exports.CreateCityRequest = exports.CreateStateRequest = exports.CreateCountryRequest = void 0;
 var CreateCountryRequest = /** @class */ (function () {
     function CreateCountryRequest() {
     }
@@ -19,3 +19,9 @@ var CreateCityRequest = /** @class */ (function () {
     return CreateCityRequest;
 }());
 exports.CreateCityRequest = CreateCityRequest;
+var QueryCity = /** @class */ (function () {
+    function QueryCity() {
+    }
+    return QueryCity;
+}());
+exports.QueryCity = QueryCity;

@@ -18,6 +18,7 @@ import { AddProductsToCatalogueRequest, CreateCatalogueRequest, QueryCatalogue, 
 import IBrandLogic, { IIBrandLogic } from "../../core/application/contract/logic/shop/brand_logic";
 import { CreateBrandRequest } from "../../core/domain/shop/dto/requests/brand_requests";
 import { ICategoryLogic, IICategoryLogic } from "../../core/application/contract/logic/shop/category_logic";
+import Address from "core/domain/authentication/entity/address";
 
 @injectable()
 export default class ShopController extends BaseController{
@@ -39,7 +40,8 @@ export default class ShopController extends BaseController{
     try{
         let data = req.body.data;
         let categoryDTO = SerializationUtility.deserializeJson<CreateCategoryRequest>(data);
-        categoryDTO.img = this.convertReqFileToUploadFile(req);
+        categoryDTO.img = this.convertReqFilesToUploadFiles(req, 'mainImg')[0] ?? null;
+        console.log("Chai")
         const createdCategory = await this.categoryService.createCategory(categoryDTO);
         res.json(createdCategory);
     }
@@ -52,6 +54,7 @@ export default class ShopController extends BaseController{
     try{
         let categoryId = new Types.ObjectId(req.params.categoryId);
         let data = req.body;
+        console.log({data})
         const categoryWithUpdatedFilters = await this.categoryService.addFiltersToCategory(categoryId, data);
         return res.json(categoryWithUpdatedFilters);
     }
@@ -331,6 +334,17 @@ export default class ShopController extends BaseController{
       console.log("Iscabas")
       let addedProducts = await this.brandLogic.addProductsToBrand(brandId, req.body);
       return res.json(addedProducts);
+    }
+    catch(ex){
+      next(ex)
+    }
+  }
+
+  // NOTE: UNREFINED
+  completeOrder = async (req: Request<{}, {}, {cart: Types.ObjectId | string, paymentId: Types.ObjectId | string, user: {email: string, phone: string}, address: Address}>, res: Response, next: NextFunction) => {
+    try{
+      let order = await this.orderService.completeOrder(req.body.cart, req.body.paymentId, req.body.user, req.body.address);
+      return res.json(order);
     }
     catch(ex){
       next(ex)

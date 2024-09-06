@@ -16,8 +16,10 @@ var JwtMiddlewareAuth = /** @class */ (function () {
         var _this = this;
         this.userService = userService;
         this.verifyUserHasPermission = function (permissions, req, res, next) {
-            var _a;
+            var _a, _b;
             var token = (_a = req.headers.authorization) !== null && _a !== void 0 ? _a : '';
+            console.log(token);
+            token = (_b = token.split(" ")[1]) !== null && _b !== void 0 ? _b : token;
             var decodedToken = _this.userService.decodeAccessToken(token);
             if (!decodedToken) {
                 return res.status(403).json('Invalid token');

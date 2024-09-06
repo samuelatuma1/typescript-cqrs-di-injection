@@ -10,7 +10,7 @@ const shopRoute = Router();
 
 const shopController = iocContainer.resolve(ShopController);
 
-shopRoute.post('/category', upload.single('img'), (req, res, next) => shopController.createCategory(req, res, next));
+shopRoute.post('/category',upload.fields([{name: 'mainImg', maxCount: 1}]), (req, res, next) => shopController.createCategory(req, res, next));
 shopRoute.post('/add-filters/:categoryId', (req, res, next) => shopController.addFiltersToCategory(req, res, next));
 shopRoute.delete("/delete-filters/:categoryId", (req, res, next) => shopController.deleteFilters(req, res, next));
 shopRoute.patch("/update-filter/:categoryId", (req, res, next) =>  shopController.updateFilter(req, res, next));
@@ -24,7 +24,7 @@ shopRoute.post("/special-offer/add-products/:specialOfferId", (req: Request<{spe
 shopRoute.get("/special-offer/active", (req, res, next) => shopController.getActiveSpecialOffers(req, res, next));
 
 shopRoute.post("/cart", (req, res, next) => shopController.createCart(req, res, next));
-
+shopRoute.post("/cart/complete-order", (req, res, next) => shopController.completeOrder(req, res, next))
 
 shopRoute.post("/billboard", upload.fields([{name: 'mainImg', maxCount: 1}, {name: 'otherMedia', maxCount: 10}]), (req, res, next) => shopController.createBillboard(req, res, next));
 shopRoute.get("/billboard/active", (req, res, next) => shopController.getActiveBillboards(req, res, next));

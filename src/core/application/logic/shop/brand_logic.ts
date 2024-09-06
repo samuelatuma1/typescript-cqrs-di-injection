@@ -84,7 +84,6 @@ export default class BrandLogic implements IBrandLogic{
 
     addProductsToBrand = async (brandId: string | Types.ObjectId, productsIds: string[] | Types.ObjectId[]): Promise<BrandResponse> => {
         this.eventTracer.say("Add Product to Brand")
-        console.log("Iscaba")
         let brand = await this.brandService.getBrand(new Types.ObjectId(brandId));
         if(!brand){
             throw new NotFoundException(`Brand not found`)
@@ -92,7 +91,7 @@ export default class BrandLogic implements IBrandLogic{
         const products = await this.productRepository.contains({_id: productsIds.map(pro => new Types.ObjectId(pro))});
         console.log(products)
         await this.productRepository.updateManyAsync({_id: {$in: products.map(prod => prod._id)}}, {brandId: new Types.ObjectId(brandId)})
-        return await this.getBrand((new Types.ObjectId(brandId)))
+        return await this.getBrand((new Types.ObjectId(brandId)), {includeProducts: true, includeCategories: true, includeFilters: true})
     }
 
     getBrand = async (brandId: Types.ObjectId | string, options?: {includeProducts: boolean, includeCategories: boolean, includeFilters: boolean}): Promise<BrandResponse> => {

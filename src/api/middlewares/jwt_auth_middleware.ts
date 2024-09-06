@@ -13,6 +13,8 @@ export default class JwtMiddlewareAuth {
 
     public verifyUserHasPermission = (permissions: string[], req: Request, res: Response, next: NextFunction) => {
         let token = req.headers.authorization ?? '';
+        console.log(token)
+        token = token.split(" ")[1] ?? token
         let decodedToken: AccessTokenPayload | null = this.userService.decodeAccessToken(token);
         if(!decodedToken){
             return res.status(403).json('Invalid token');

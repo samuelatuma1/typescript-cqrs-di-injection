@@ -224,42 +224,90 @@ var BaseRepository = /** @class */ (function () {
                 });
             });
         };
+        this.buildAddToFieldsQuery = function (fields) {
+            var addToSetQuery = {};
+            for (var _i = 0, _a = Object.entries(fields); _i < _a.length; _i++) {
+                var _b = _a[_i], key = _b[0], values = _b[1];
+                addToSetQuery[key] = { $each: values };
+                console.log({ $each: values });
+            }
+            return { $addToSet: addToSetQuery };
+        };
         this.addToFieldsList = function (query, fields) { return __awaiter(_this, void 0, Promise, function () {
-            var addToSetQuery, _i, _a, _b, key, values, updatedResponse;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var update, updatedResponse;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
-                        addToSetQuery = {};
-                        for (_i = 0, _a = Object.entries(fields); _i < _a.length; _i++) {
-                            _b = _a[_i], key = _b[0], values = _b[1];
-                            addToSetQuery[key] = { $each: values };
-                            console.log({ $each: values });
-                        }
-                        console.log({ query: query, $addToSet: addToSetQuery });
-                        return [4 /*yield*/, this._model.updateMany(query, { $addToSet: addToSetQuery })];
+                        update = this.buildAddToFieldsQuery(fields);
+                        return [4 /*yield*/, this._model.updateMany(query, update)];
                     case 1:
-                        updatedResponse = _c.sent();
+                        updatedResponse = _a.sent();
                         console.log({ updatedResponse: updatedResponse });
                         return [2 /*return*/, updatedResponse.modifiedCount];
                 }
             });
         }); };
+        this.buildRemoveFromFieldsQuery = function (fields) {
+            var deleteFromFieldListQuery = {};
+            for (var _i = 0, _a = Object.entries(fields); _i < _a.length; _i++) {
+                var _b = _a[_i], key = _b[0], values = _b[1];
+                if (Array.isArray(values)) {
+                    deleteFromFieldListQuery[key] = { $in: values };
+                }
+                else {
+                    deleteFromFieldListQuery[key] = values;
+                }
+            }
+            return { $pull: deleteFromFieldListQuery };
+        };
         this.removeFromFieldsList = function (query, fields) { return __awaiter(_this, void 0, Promise, function () {
-            var deleteFromFieldListQuery, _i, _a, _b, key, values, updatedResponse;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var update, updatedResponse;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
-                        deleteFromFieldListQuery = {};
-                        for (_i = 0, _a = Object.entries(fields); _i < _a.length; _i++) {
-                            _b = _a[_i], key = _b[0], values = _b[1];
-                            deleteFromFieldListQuery[key] = { $in: values };
-                        }
-                        console.log({ $pull: deleteFromFieldListQuery });
-                        return [4 /*yield*/, this._model.updateMany(query, { $pull: deleteFromFieldListQuery })];
+                        update = this.buildRemoveFromFieldsQuery(fields);
+                        return [4 /*yield*/, this._model.updateMany(query, update)];
                     case 1:
-                        updatedResponse = _c.sent();
+                        updatedResponse = _a.sent();
                         console.log(updatedResponse);
                         return [2 /*return*/, updatedResponse.modifiedCount];
+                }
+            });
+        }); };
+        this.addAndRemoveFromFieldsList = function (query, addToFields, removeFromField) { return __awaiter(_this, void 0, Promise, function () {
+            var addFieldsQuery, removeFieldsQuery, addAndRemoveUpdate, addKeys, shouldUpdateaddAndRemoveFieldsSeparately, key, key, updatedResponse;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        addFieldsQuery = this.buildAddToFieldsQuery(addToFields);
+                        removeFieldsQuery = this.buildRemoveFromFieldsQuery(removeFromField);
+                        addAndRemoveUpdate = __assign(__assign({}, addFieldsQuery), removeFieldsQuery);
+                        addKeys = new Set();
+                        shouldUpdateaddAndRemoveFieldsSeparately = false;
+                        for (key in addFieldsQuery.$addToSet) {
+                            addKeys.add(key.toString());
+                        }
+                        for (key in removeFieldsQuery.$pull) {
+                            if (addKeys.has(key.toString())) {
+                                shouldUpdateaddAndRemoveFieldsSeparately = true;
+                            }
+                        }
+                        console.log({ addAndRemoveUpdate: addAndRemoveUpdate });
+                        if (!!shouldUpdateaddAndRemoveFieldsSeparately) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this._model.updateMany(query, addAndRemoveUpdate)];
+                    case 1:
+                        updatedResponse = _a.sent();
+                        return [2 /*return*/, updatedResponse.modifiedCount];
+                    case 2:
+                        console.log("Updating separately");
+                        return [4 /*yield*/, this._model.updateMany(query, addFieldsQuery)];
+                    case 3:
+                        _a.sent();
+                        return [4 /*yield*/, this._model.updateMany(query, removeFieldsQuery)];
+                    case 4:
+                        _a.sent();
+                        _a.label = 5;
+                    case 5: return [2 /*return*/];
                 }
             });
         }); };

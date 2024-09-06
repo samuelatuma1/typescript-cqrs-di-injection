@@ -85,6 +85,7 @@ var pagination_result_1 = require("../../../domain/authentication/dto/results/pa
 var cart_1 = require("../../../domain/shop/entity/cart");
 var item_status_1 = require("../../../domain/shop/enum/item_status");
 var cart_request_1 = require("../../../domain/shop/dto/requests/cart_request");
+var update_product_inventory_type_1 = require("../../../domain/shop/enum/update_product_inventory_type");
 var ProductService = /** @class */ (function () {
     function ProductService(eventTracer, categoryService, productRepository, discountService, fileService) {
         var _this = this;
@@ -414,7 +415,7 @@ var ProductService = /** @class */ (function () {
                 }
             });
         }); };
-        this.buildUpdateData = function (product, updateProductRequest) {
+        this.buildUpdateDataForNonListFields = function (product, updateProductRequest) {
             var updateData = {};
             if (updateProductRequest.name && product.name !== updateProductRequest.name) {
                 updateData.name = updateProductRequest.name;
@@ -428,57 +429,105 @@ var ProductService = /** @class */ (function () {
             if (updateProductRequest.currency && product.currency !== updateProductRequest.currency) {
                 updateData.currency = updateProductRequest.currency;
             }
-            if (updateProductRequest.extras && updateProductRequest.extras.length) {
-                updateData.extras = updateProductRequest.extras;
+            if (updateProductRequest.inventory) {
+                updateData.inventory = product.inventory;
+                updateData.inventory.qtyAvailable = updateProductRequest.inventory.updateType === update_product_inventory_type_1.UpdateProductInventoryType.increment ?
+                    product.inventory.qtyAvailable + updateProductRequest.inventory.qty :
+                    product.inventory.qtyAvailable - updateProductRequest.inventory.qty; // we can only update the qty available
             }
             return updateData;
         };
+        this.buildAddAndRemoveFieldListsForProduct = function (updateProductRequest) { return __awaiter(_this, void 0, Promise, function () {
+            var addToFieldsUpdate, removeFromFieldsUpdate, categoriesIds, updatedCategories;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        addToFieldsUpdate = {};
+                        removeFromFieldsUpdate = {};
+                        if (updateProductRequest.addTags) {
+                            addToFieldsUpdate.tags = updateProductRequest.addTags;
+                        }
+                        if (updateProductRequest.removeTags) {
+                            removeFromFieldsUpdate.tags = updateProductRequest.removeTags;
+                        }
+                        if (updateProductRequest.addExtras) {
+                            addToFieldsUpdate.extras = updateProductRequest.addExtras;
+                        }
+                        if (updateProductRequest.removeExtras) {
+                            removeFromFieldsUpdate.extras = { title: { $in: updateProductRequest.removeExtras.map(function (extra) { return extra.title; }) } };
+                        }
+                        if (!updateProductRequest.addCategories) return [3 /*break*/, 2];
+                        categoriesIds = updateProductRequest.addCategories.map(function (categoryId) { return new mongoose_1.Types.ObjectId(categoryId); });
+                        return [4 /*yield*/, this.categoryService.getCategoriesByIds(categoriesIds, false)];
+                    case 1:
+                        updatedCategories = _a.sent();
+                        addToFieldsUpdate.categories = updatedCategories.map(function (category) { return category._id; });
+                        _a.label = 2;
+                    case 2:
+                        if (updateProductRequest.removeCategories) {
+                            removeFromFieldsUpdate.categories = updateProductRequest.removeCategories.map(function (categoryId) { return new mongoose_1.Types.ObjectId(categoryId); });
+                        }
+                        if (!object_utility_1["default"].objectSize(addToFieldsUpdate) && !object_utility_1["default"].objectSize(removeFromFieldsUpdate)) {
+                            return [2 /*return*/, null];
+                        }
+                        console.log({ addToFieldsUpdate: addToFieldsUpdate, removeFromFieldsUpdate: removeFromFieldsUpdate });
+                        return [2 /*return*/, {
+                                addToFieldsUpdate: addToFieldsUpdate, removeFromFieldsUpdate: removeFromFieldsUpdate
+                            }];
+                }
+            });
+        }); };
         this.updateProduct = function (productId, updateProductRequest) { return __awaiter(_this, void 0, Promise, function () {
-            var product, updateData, categoriesIds, updatedCategories, categoryIds, _a, updatedProduct, ex_4;
-            var _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var fieldsListToUpdate, _a, addToFieldsUpdate, removeFromFieldsUpdate, product, updateData, categoryIds, _b, updatedProduct, ex_4;
+            var _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
                     case 0:
                         this.eventTracer.say("Updating Product");
                         this.eventTracer.request = updateProductRequest;
-                        _c.label = 1;
+                        _d.label = 1;
                     case 1:
-                        _c.trys.push([1, 9, , 10]);
-                        return [4 /*yield*/, this.getProductByIdOrRaiseException(productId)];
+                        _d.trys.push([1, 10, , 11]);
+                        // get orignial product
+                        this.eventTracer.say("Building fieldsListToUpdate");
+                        return [4 /*yield*/, this.buildAddAndRemoveFieldListsForProduct(updateProductRequest)];
                     case 2:
-                        product = _c.sent();
-                        this.eventTracer.say("Product gotten for product with id " + productId);
-                        updateData = this.buildUpdateData(product, updateProductRequest);
-                        if (!(updateProductRequest.categories && updateProductRequest.categories.length)) return [3 /*break*/, 4];
-                        categoriesIds = updateProductRequest.categories.map(function (categoryId) { return new mongoose_1.Types.ObjectId(categoryId); });
-                        return [4 /*yield*/, this.categoryService.getCategoriesByIds(categoriesIds, false)];
+                        fieldsListToUpdate = _d.sent();
+                        _a = fieldsListToUpdate !== null && fieldsListToUpdate !== void 0 ? fieldsListToUpdate : {}, addToFieldsUpdate = _a.addToFieldsUpdate, removeFromFieldsUpdate = _a.removeFromFieldsUpdate;
+                        if (!fieldsListToUpdate) return [3 /*break*/, 4];
+                        this.eventTracer.say("Updating fields having list");
+                        return [4 /*yield*/, this.productRepository.addAndRemoveFromFieldsList({ _id: productId }, addToFieldsUpdate, removeFromFieldsUpdate)];
                     case 3:
-                        updatedCategories = _c.sent();
-                        updateData.categories = updatedCategories.map(function (category) { return category._id; });
-                        _c.label = 4;
+                        _d.sent();
+                        _d.label = 4;
                     case 4:
-                        if (!(updateProductRequest.filters && object_utility_1["default"].objectSize(updateProductRequest.filters))) return [3 /*break*/, 6];
-                        categoryIds = ((_b = updateProductRequest.categories) === null || _b === void 0 ? void 0 : _b.length) ? updateProductRequest.categories : product.categories;
-                        _a = updateData;
-                        return [4 /*yield*/, this.validateAndSetFiltersForProduct(categoryIds, updateProductRequest.filters)];
+                        this.eventTracer.say("Product gotten for product with id " + productId);
+                        return [4 /*yield*/, this.getProductByIdOrRaiseException(productId)];
                     case 5:
-                        _a.filters = _c.sent();
-                        _c.label = 6;
+                        product = _d.sent();
+                        updateData = this.buildUpdateDataForNonListFields(product, updateProductRequest);
+                        if (!(updateProductRequest.filters && object_utility_1["default"].objectSize(updateProductRequest.filters))) return [3 /*break*/, 7];
+                        categoryIds = __spreadArrays(product.categories, ((_c = addToFieldsUpdate === null || addToFieldsUpdate === void 0 ? void 0 : addToFieldsUpdate.categories) !== null && _c !== void 0 ? _c : []));
+                        _b = updateData;
+                        return [4 /*yield*/, this.validateAndSetFiltersForProduct(categoryIds, updateProductRequest.filters)];
                     case 6:
+                        _b.filters = _d.sent();
+                        _d.label = 7;
+                    case 7:
                         this.eventTracer.say("Fields to update " + JSON.stringify(updateData));
                         return [4 /*yield*/, this.productRepository.updateByIdAsync(product._id, updateData)];
-                    case 7:
-                        _c.sent();
-                        return [4 /*yield*/, this.productRepository.getByIdAsync(product._id)];
                     case 8:
-                        updatedProduct = _c.sent();
+                        _d.sent();
+                        return [4 /*yield*/, this.productRepository.getByIdAsync(product._id)];
+                    case 9:
+                        updatedProduct = _d.sent();
                         this.eventTracer.isSuccessWithResponseAndMessage(updateProductRequest);
                         return [2 /*return*/, updatedProduct];
-                    case 9:
-                        ex_4 = _c.sent();
+                    case 10:
+                        ex_4 = _d.sent();
                         this.eventTracer.isExceptionWithMessage("" + ex_4);
                         throw ex_4;
-                    case 10: return [2 /*return*/];
+                    case 11: return [2 /*return*/];
                 }
             });
         }); };
@@ -502,6 +551,11 @@ var ProductService = /** @class */ (function () {
                         return [4 /*yield*/, this.getDiscountedPriceAndAppliedDiscountsForProduct(productResponse)];
                     case 1:
                         productResponse = _c.sent();
+                        console.log("-----------------------------");
+                        console.log("-----------------------------");
+                        console.log({ productResponse: productResponse });
+                        console.log("-----------------------------");
+                        console.log("-----------------------------");
                         _c.label = 2;
                     case 2: return [2 /*return*/, productResponse];
                 }
@@ -530,11 +584,12 @@ var ProductService = /** @class */ (function () {
         this.getProducts = function (getProductsQuery, options) { return __awaiter(_this, void 0, Promise, function () {
             var products, allProducts;
             var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.productRepository.getAsync(getProductsQuery, { categories: options.includeCategories })];
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, this.productRepository.getAsync(getProductsQuery, { categories: (_a = options.includeCategories) !== null && _a !== void 0 ? _a : false })];
                     case 1:
-                        products = _a.sent();
+                        products = _b.sent();
                         return [4 /*yield*/, Promise.allSettled(products.map(function (product) { return __awaiter(_this, void 0, void 0, function () { var _a; return __generator(this, function (_b) {
                                 switch (_b.label) {
                                     case 0: return [4 /*yield*/, this.convertProductToProductResponseAsync(product, { includeDiscountAndDiscountPrice: (_a = options.includeDiscountAndDiscountPrice) !== null && _a !== void 0 ? _a : true })];
@@ -542,7 +597,7 @@ var ProductService = /** @class */ (function () {
                                 }
                             }); }); }))];
                     case 2:
-                        allProducts = _a.sent();
+                        allProducts = _b.sent();
                         return [2 /*return*/, allProducts.map(function (item) {
                                 if (item.status === "fulfilled" && item.value) {
                                     return item.value;
@@ -668,12 +723,12 @@ var ProductService = /** @class */ (function () {
                         _a.trys.push([0, 2, , 3]);
                         console.log("We reach here");
                         this.eventTracer.say("Get Discounted Price And Applied DiscountsForProduct");
-                        if (!product.discounts.length) {
-                            return [2 /*return*/, product];
-                        }
                         discountedPrice = product.price;
                         priceDiscount = void 0;
                         product.discountedPrice = product.price;
+                        if (!product.discounts.length) {
+                            return [2 /*return*/, product];
+                        }
                         return [4 /*yield*/, this.getActiveDiscount(product)];
                     case 1:
                         activeDiscount = _a.sent();

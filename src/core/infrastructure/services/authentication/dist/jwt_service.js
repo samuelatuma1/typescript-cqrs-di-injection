@@ -15,6 +15,7 @@ var JwtService = /** @class */ (function () {
         };
     }
     JwtService.prototype.decode = function (token, secret) {
+        console.log({ token: token });
         return jsonwebtoken_1["default"].verify(token, secret);
     };
     JwtService = __decorate([

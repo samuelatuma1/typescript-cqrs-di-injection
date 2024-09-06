@@ -50,6 +50,8 @@ var redis_config_1 = require("../../../application/common/config/redis_config");
 var redis_1 = require("redis");
 var tsyringe_1 = require("tsyringe");
 var event_tracer_1 = require("../../../application/contract/observability/event_tracer");
+var subscribe_event_options_1 = require("../../../domain/model/events/subscribe_event_options");
+var date_utility_1 = require("../../../application/common/utilities/date_utility");
 var RedisEventService = /** @class */ (function () {
     function RedisEventService(config, eventTracer) {
         var _this = this;
@@ -78,8 +80,9 @@ var RedisEventService = /** @class */ (function () {
                 }
             });
         }); };
-        this.addMessage = function (streamName, message) { return __awaiter(_this, void 0, Promise, function () {
-            var connection, dataPack, id, messageId, ex_2;
+        ///
+        this.publishToQueue = function (queueName, message, options) { return __awaiter(_this, void 0, Promise, function () {
+            var connection, dataPack, id, messageId, unixTimeinMilliseconds, computedMinId, ex_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -91,10 +94,23 @@ var RedisEventService = /** @class */ (function () {
                             return [2 /*return*/, null];
                         }
                         dataPack = { data: serialization_utility_1["default"].serializeJson(message) };
+                        console.log({ dataPack: dataPack });
                         id = '*';
-                        return [4 /*yield*/, connection.xAdd(streamName, id, dataPack)];
+                        return [4 /*yield*/, connection.xAdd(queueName, id, dataPack)];
                     case 2:
                         messageId = _a.sent();
+                        if (options) {
+                            console.log({ options: options });
+                            if (options instanceof subscribe_event_options_1.EventQueueSizeStrategyMaxLength) {
+                                connection.xTrim(queueName, "MAXLEN", options.maxLength); // No need to await this execution
+                            }
+                            else if (options instanceof subscribe_event_options_1.EventQueueSizeStrategyRetention) {
+                                unixTimeinMilliseconds = date_utility_1["default"].getUnixTimeInMilliseconds();
+                                computedMinId = unixTimeinMilliseconds - date_utility_1["default"].getMillisecondsInTime(options.duration, options.unit);
+                                // let id = `${computedMinId}-0`
+                                connection.xTrim(queueName, "MINID", computedMinId);
+                            }
+                        }
                         return [2 /*return*/, messageId];
                     case 3:
                         ex_2 = _a.sent();
@@ -104,8 +120,8 @@ var RedisEventService = /** @class */ (function () {
                 }
             });
         }); };
-        this.subscribe = function (options) { return __awaiter(_this, void 0, Promise, function () {
-            var connection, idInitialPosition, stream, dataArr, _i, dataArr_1, data, streamKeyName, _a, _b, message;
+        this.subscribeToQueue = function (options) { return __awaiter(_this, void 0, Promise, function () {
+            var connection, idInitialPosition, stream, dataArr, _i, dataArr_1, data, streamKeyName, _a, _b, message, callBack, retryCount, maxRetryCount, dlqName;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0: return [4 /*yield*/, this.getRedisConnection()];
@@ -116,21 +132,22 @@ var RedisEventService = /** @class */ (function () {
                         }
                         idInitialPosition = '0';
                         console.log({ options: options });
-                        return [4 /*yield*/, connection.exists(options.streamName)];
+                        return [4 /*yield*/, connection.exists(options.queueName)];
                     case 2:
                         if (!!(_c.sent())) return [3 /*break*/, 4];
-                        return [4 /*yield*/, connection.xGroupCreate(options.streamName, options.consumerGroupName, idInitialPosition, { MKSTREAM: true })];
+                        this.eventTracer.say("Creating new Consumer group with name " + options.consumerGroupName + " for queue " + options.queueName);
+                        return [4 /*yield*/, connection.xGroupCreate(options.queueName, options.consumerGroupName, idInitialPosition, { MKSTREAM: true })];
                     case 3:
                         _c.sent();
                         _c.label = 4;
                     case 4:
                         stream = {
-                            key: options.streamName,
+                            key: options.queueName,
                             id: '>'
                         };
                         _c.label = 5;
                     case 5:
-                        if (!true) return [3 /*break*/, 14];
+                        if (!true) return [3 /*break*/, 19];
                         return [4 /*yield*/, connection.xReadGroup(redis_1.commandOptions({
                                 isolated: true
                             }), options.consumerGroupName, options.consumerName, [
@@ -141,36 +158,53 @@ var RedisEventService = /** @class */ (function () {
                             })];
                     case 6:
                         dataArr = _c.sent();
-                        if (!(dataArr && dataArr.length)) return [3 /*break*/, 13];
+                        if (!(dataArr && dataArr.length)) return [3 /*break*/, 18];
                         _i = 0, dataArr_1 = dataArr;
                         _c.label = 7;
                     case 7:
-                        if (!(_i < dataArr_1.length)) return [3 /*break*/, 13];
+                        if (!(_i < dataArr_1.length)) return [3 /*break*/, 18];
                         data = dataArr_1[_i];
                         streamKeyName = data.name;
-                        if (!(streamKeyName === options.streamName)) return [3 /*break*/, 12];
+                        if (!(streamKeyName === options.queueName)) return [3 /*break*/, 17];
                         _a = 0, _b = data.messages;
                         _c.label = 8;
                     case 8:
-                        if (!(_a < _b.length)) return [3 /*break*/, 12];
+                        if (!(_a < _b.length)) return [3 /*break*/, 17];
                         message = _b[_a];
-                        //trigger appropriate action callback for each message
-                        return [4 /*yield*/, options.messageHandler(message, message.id)];
+                        return [4 /*yield*/, options.messageHandler(message.message, message.id)];
                     case 9:
-                        //trigger appropriate action callback for each message
-                        _c.sent();
-                        return [4 /*yield*/, connection.xAck(options.streamName, options.consumerGroupName, message.id)];
+                        callBack = _c.sent();
+                        if (!!callBack) return [3 /*break*/, 14];
+                        if (!options.saveFailedProcessesToDeadLetterQueue) return [3 /*break*/, 14];
+                        retryCount = 1;
+                        maxRetryCount = options.saveFailedProcessesToDeadLetterQueue.maxReprocessRetry;
+                        _c.label = 10;
                     case 10:
-                        _c.sent();
-                        _c.label = 11;
+                        if (!(!callBack && retryCount < maxRetryCount)) return [3 /*break*/, 12];
+                        return [4 /*yield*/, options.messageHandler(message.message, message.id)];
                     case 11:
+                        callBack = _c.sent();
+                        retryCount++;
+                        return [3 /*break*/, 10];
+                    case 12:
+                        if (!(retryCount >= maxRetryCount)) return [3 /*break*/, 14];
+                        dlqName = options.saveFailedProcessesToDeadLetterQueue.deadLetterQueueName;
+                        return [4 /*yield*/, this.publishToQueue(dlqName, message, options.saveFailedProcessesToDeadLetterQueue.sizeStrategy)];
+                    case 13:
+                        _c.sent();
+                        _c.label = 14;
+                    case 14: return [4 /*yield*/, connection.xAck(options.queueName, options.consumerGroupName, message.id)];
+                    case 15:
+                        _c.sent();
+                        _c.label = 16;
+                    case 16:
                         _a++;
                         return [3 /*break*/, 8];
-                    case 12:
+                    case 17:
                         _i++;
                         return [3 /*break*/, 7];
-                    case 13: return [3 /*break*/, 5];
-                    case 14: return [2 /*return*/];
+                    case 18: return [3 /*break*/, 5];
+                    case 19: return [2 /*return*/];
                 }
             });
         }); };

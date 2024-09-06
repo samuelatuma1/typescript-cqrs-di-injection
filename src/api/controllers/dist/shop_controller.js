@@ -84,20 +84,22 @@ var ShopController = /** @class */ (function (_super) {
         _this.cateoryLogic = cateoryLogic;
         _this.createCategory = function (req, res, next) { return __awaiter(_this, void 0, Promise, function () {
             var data, categoryDTO, createdCategory, ex_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _a.trys.push([0, 2, , 3]);
+                        _b.trys.push([0, 2, , 3]);
                         data = req.body.data;
                         categoryDTO = serialization_utility_1["default"].deserializeJson(data);
-                        categoryDTO.img = this.convertReqFileToUploadFile(req);
+                        categoryDTO.img = (_a = this.convertReqFilesToUploadFiles(req, 'mainImg')[0]) !== null && _a !== void 0 ? _a : null;
+                        console.log("Chai");
                         return [4 /*yield*/, this.categoryService.createCategory(categoryDTO)];
                     case 1:
-                        createdCategory = _a.sent();
+                        createdCategory = _b.sent();
                         res.json(createdCategory);
                         return [3 /*break*/, 3];
                     case 2:
-                        ex_1 = _a.sent();
+                        ex_1 = _b.sent();
                         next(ex_1);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
@@ -112,6 +114,7 @@ var ShopController = /** @class */ (function (_super) {
                         _a.trys.push([0, 2, , 3]);
                         categoryId = new mongoose_1.Types.ObjectId(req.params.categoryId);
                         data = req.body;
+                        console.log({ data: data });
                         return [4 /*yield*/, this.categoryService.addFiltersToCategory(categoryId, data)];
                     case 1:
                         categoryWithUpdatedFilters = _a.sent();
@@ -588,6 +591,25 @@ var ShopController = /** @class */ (function (_super) {
                     case 2:
                         ex_26 = _a.sent();
                         next(ex_26);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
+        // NOTE: UNREFINED
+        _this.completeOrder = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var order, ex_27;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, this.orderService.completeOrder(req.body.cart, req.body.paymentId, req.body.user, req.body.address)];
+                    case 1:
+                        order = _a.sent();
+                        return [2 /*return*/, res.json(order)];
+                    case 2:
+                        ex_27 = _a.sent();
+                        next(ex_27);
                         return [3 /*break*/, 3];
                     case 3: return [2 /*return*/];
                 }

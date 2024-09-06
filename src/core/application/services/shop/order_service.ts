@@ -14,6 +14,11 @@ import OrderItem from "../../../domain/shop/entity/order_item";
 import { OrderStatus } from "../../../domain/shop/enum/order_status";
 import IOrderRepository, { IIOrderRepository } from "../../../application/contract/data_access/shop/order_repository";
 import { ItemStatus } from "../../../domain/shop/enum/item_status";
+import { IIOrderServiceProducer, IOrderServiceProducer } from "../../../application/contract/services/events/shop/producer/order_service_producer";
+import DateUtility from "../../../application/common/utilities/date_utility";
+import OrderPlacedEventDTO from "../../../domain/model/events/dto/order_placed_event_dto";
+
+import IAddressService, { IIAddressService } from "../../../application/contract/services/authentication/address_service";
 
 
 @injectable()
@@ -24,6 +29,8 @@ export default class OrderService implements IOrderService{
         @inject(IICartRepository) public readonly cartRepository: ICartRepository,
         @inject(IIOrderRepository) public readonly orderRepository: IOrderRepository,
         @inject(IIProductService) public readonly productService: IProductService,
+        @inject(IIOrderServiceProducer) public readonly orderServiceProducer: IOrderServiceProducer,
+        @inject(IIAddressService) private readonly addressService: IAddressService
     ){
     }
     private transformCartItemsToOrderItems = (cartItems: CartItem[]): OrderItem[] => {
@@ -33,12 +40,14 @@ export default class OrderService implements IOrderService{
                 product : cartItem.product,
                 qty: cartItem.qty,
                 priceAtOrder: cartItem.priceAtOrder,
-                currency: cartItem.currency
-            });
+                currency: cartItem.currency,
+                status: cartItem.status
+            })
+            ;
             return orderEquivalent;
         })
     }
-    public completeOrder = async (cart: Types.ObjectId | string, paymentId: Types.ObjectId | string, user: {email: string, phone: string}, address: Address) => {
+    public completeOrder = async (cart: Types.ObjectId | string, paymentId: Types.ObjectId | string, user: {email: string, phone: string}, address: Address | string): Promise<Order> => {
         // validate payment for cartRequest 
         let cartId = new Types.ObjectId(cart);
         let savedCart = await this.cartRepository.getByIdAsync(cartId);
@@ -48,13 +57,13 @@ export default class OrderService implements IOrderService{
 
         //TODO:validate payment
         const isValidPayment = true;
-
+        let savedAddress = await this.addressService.getOrCreateAddress(address)
         let order = new Order({
             orderItems: this.transformCartItemsToOrderItems(savedCart.cartItems),
             totalAmount : savedCart.totalAmount,
             payment: null,
             user: null,
-            address: address,
+            address: savedAddress._id,
             status: OrderStatus.PENDING,
             currency: savedCart.currency,
         })
@@ -62,10 +71,16 @@ export default class OrderService implements IOrderService{
         // TODO: Save order
         let savedOrder = await this.orderRepository.addAsync(order);
         //TODO: Good place to create an event to handle notifying appropriate admin an order has been placed
+        let orderPlacedEventDTO = new OrderPlacedEventDTO ({
+            orderId: savedOrder._id,
+            createdAt: DateUtility.getUTCNow()
+        })
+        let orderPlacedEvent = await this.orderServiceProducer.publishNewOrderCreatedEvent(orderPlacedEventDTO);
+        this.eventTracer.say(orderPlacedEvent ? `OrderPlaced event  with id ${orderPlacedEvent} successful`: `Failed to initiate order placed event`)
         //TODO: Reduce quantities available for selected orders 
         
         savedCart.isActive = false;
-        await this.cartRepository.updateByIdAsync(savedCart._id, {isActive: false})
+        await this.cartRepository.updateByIdAsync(savedCart._id, {isActive: false, orderId: savedOrder._id})
         return savedOrder;
     }
     public checkout = async ( cart: Types.ObjectId | string ) => {
@@ -103,10 +118,11 @@ export default class OrderService implements IOrderService{
 
             userCart.totalAmount = total;
             userCart.currency = currency;
-
+            userCart.cartItems = mergedCartItems;
             this.eventTracer.isSuccessWithResponseAndMessage(userCart);
-
-            return await this.cartRepository.addAsync(userCart);
+            
+            await this.cartRepository.updateAsync(userCart)
+            return await this.cartRepository.getByIdAsync(userCart._id);
         }
         catch(ex){
             this.eventTracer.isErrorWithMessage(`${ex}`);
@@ -158,8 +174,9 @@ export default class OrderService implements IOrderService{
                 cartItemsProductIdDict[cartItemProductIdString] = cartItem;
             }
             else{
-                // product already exists, add the  quantities to make a single product
-                cartItemsProductIdDict[cartItemProductIdString].qty += cartItem.qty;
+                // OPTION 1: product already exists, add the  quantities to make a single product
+                    // cartItemsProductIdDict[cartItemProductIdString].qty += cartItem.qty;
+                // OPTION 2: ignore, since createcartitem request is most likely the orderer's new choice 
             }
         }
         
@@ -176,4 +193,10 @@ export default class OrderService implements IOrderService{
     }
 
     
+
+    handleOrderCreatedEvent = async (orderCreatedDTO: OrderPlacedEventDTO): Promise<boolean> => {
+        console.log({handleOrderCreatedEvent: "Not implemented", orderCreatedDTO})
+        return true;
+        throw new Error("Not implemented");
+    }
 }

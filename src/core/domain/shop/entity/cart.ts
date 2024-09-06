@@ -36,6 +36,7 @@ export default class Cart extends BaseEntity<Types.ObjectId>{
     public currency: string = "";
     public user: string | User | null = null; // user email
     isActive: boolean;
+    public orderId: Types.ObjectId | null = null;
     
     public constructor(init: CartInit){
         let _id = new Types.ObjectId;

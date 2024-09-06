@@ -38,6 +38,7 @@ var Cart = /** @class */ (function (_super) {
         _this = _super.call(this, _id) || this;
         _this.currency = "";
         _this.user = null; // user email
+        _this.orderId = null;
         _this.cartItems = init.cartItems;
         _this.totalAmount = (_a = init.totalAmount) !== null && _a !== void 0 ? _a : 0;
         _this.user = (_b = init.user) !== null && _b !== void 0 ? _b : null;

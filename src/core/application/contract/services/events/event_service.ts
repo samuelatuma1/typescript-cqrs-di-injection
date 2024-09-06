@@ -1,8 +1,8 @@
-import { listenToStreamOptions } from "../../../../domain/model/events/subscribe_event_options";
+import { EventQueueSizeStrategyMaxLength, EventQueueSizeStrategyRetention, listenToQueueOptions as listenToQueueOptions } from "../../../../domain/model/events/subscribe_event_options";
 
 export default interface IEventService {
-    addMessage (streamName: string, message: any): Promise<string | null> ;
-    subscribe(options: listenToStreamOptions): Promise<void>;
+    publishToQueue (queueName: string, message: any, options?: EventQueueSizeStrategyRetention | EventQueueSizeStrategyMaxLength): Promise<string | null> ;
+    subscribeToQueue(options: listenToQueueOptions): Promise<void>;
 }
 
 export const IIEventService = 'IEventService';

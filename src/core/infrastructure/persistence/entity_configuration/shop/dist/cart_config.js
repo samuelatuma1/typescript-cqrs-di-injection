@@ -15,6 +15,7 @@ exports.CartSchema = new mongoose_1.Schema({
     recordStatus: { type: String, required: true },
     cartItems: { type: [CartItemSchema] },
     totalAmount: { type: Number, "default": 0 },
-    user: { type: String }
+    user: { type: String },
+    orderId: { type: mongoose_1.Schema.Types.ObjectId, "default": null }
 });
 exports.cartModel = mongoose_1.model('Cart', exports.CartSchema);

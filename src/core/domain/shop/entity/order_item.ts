@@ -15,7 +15,7 @@ export default class OrderItem {
         qty: number,
         priceAtOrder: number,
         currency: string,
-        status?: ItemStatus
+        status?: ItemStatus | string
     }){
         this.product = init.product;
         this.qty = init.qty;

@@ -23,5 +23,6 @@ export default interface IBaseRepository<TEntity extends BaseEntity<TId>, TId> {
 
     or (queries: Partial<{[k in keyof TEntity]: any}>[], joins?: Partial<{[k in keyof TEntity]: boolean}>): Promise<TEntity[]>;
     addToFieldsList(query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[]}>): Promise<number>
-    removeFromFieldsList(query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[]}>): Promise<number>
+    removeFromFieldsList(query: Partial<{[k in keyof TEntity]: any}>, fields: Partial<{[key in keyof TEntity]: any[] | {[key: string]: any}}>): Promise<number>
+    addAndRemoveFromFieldsList(query: Partial<{[k in keyof TEntity]: any}>, addToFields: Partial<{[key in keyof TEntity]: any[]}>, removeFromField: Partial<{[key in keyof TEntity]: any[] | {[key: string]: any}}>): Promise<number>
 }

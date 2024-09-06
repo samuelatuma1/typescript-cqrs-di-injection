@@ -15,7 +15,8 @@ export const CartSchema = new Schema<Cart>({
 
     cartItems: {type: [CartItemSchema]},
     totalAmount: {type: Number, default: 0},
-    user: {type: String}
+    user: {type: String},
+    orderId: {type: Schema.Types.ObjectId, default: null}
 })
 
 export const cartModel = model<Cart>( 'Cart', CartSchema)

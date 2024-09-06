@@ -69,6 +69,10 @@ import { IIBrandLogic } from '../core/application/contract/logic/shop/brand_logi
 import BrandLogic from '../core/application/logic/shop/brand_logic';
 import { IICategoryLogic } from '../core/application/contract/logic/shop/category_logic';
 import CategoryLogic from '../core/application/logic/shop/category_logic';
+import { IIOrderServiceConsumer } from '../core/application/contract/services/events/shop/consumer/order_service_consumer';
+import OrderServiceConsumer from '../core/application/services/shop/events/consumer/order_service_consumer';
+import { IIOrderServiceProducer } from '../core/application/contract/services/events/shop/producer/order_service_producer';
+import OrderServiceProducer from '../core/application/services/shop/events/producer/order_service_producer';
 
 dotenv.config();
 
@@ -226,5 +230,12 @@ container.register(IICategoryLogic, {
   useClass: CategoryLogic
 })
 
+container.register(IIOrderServiceConsumer, {
+  useClass: OrderServiceConsumer
+})
+
+container.register(IIOrderServiceProducer, {
+  useClass: OrderServiceProducer
+})
 
 export {container as iocContainer}
