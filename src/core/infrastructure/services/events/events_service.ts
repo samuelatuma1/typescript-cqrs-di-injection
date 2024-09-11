@@ -3,7 +3,7 @@ import IRedisConfig, { IIRedisConfig } from "../../../application/common/config/
 import { commandOptions, createClient, RedisClientType } from "redis";
 import { inject, injectable } from "tsyringe";
 import IEventTracer, { IIEventTracer } from "../../../application/contract/observability/event_tracer";
-import IEventService from "../../../application/contract/services/events/event_service";
+import IEventService from "../../../application/contract/events/event_service";
 import { EventQueueSizeStrategyMaxLength, EventQueueSizeStrategyRetention, listenToQueueOptions } from "../../../domain/model/events/subscribe_event_options";
 import DateUtility from "../../../application/common/utilities/date_utility";
 
@@ -74,7 +74,9 @@ export default class RedisEventService implements IEventService {
         console.log({options})
         
         // if consumer group has not been created create consumer group
-        if(!(await connection.exists(options.queueName))){ 
+        let doesQueueExist = await connection.exists(options.queueName)
+        console.log({doesQueueExist, queueName: options.queueName})
+        if(!doesQueueExist){ 
             this.eventTracer.say(`Creating new Consumer group with name ${options.consumerGroupName} for queue ${options.queueName}`)
 
             await connection.xGroupCreate(options.queueName, options.consumerGroupName, idInitialPosition, {MKSTREAM: true} )

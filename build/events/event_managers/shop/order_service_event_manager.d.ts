@@ -1,4 +1,4 @@
-import IOrderServiceConsumer from "../../../core/application/contract/services/events/shop/consumer/order_service_consumer";
+import IOrderServiceConsumer from "../../../core/application/contract/events/shop/consumer/order_service_consumer";
 export default class OrderServiceEventManager {
     private readonly orderServiceConsumer;
     constructor(orderServiceConsumer: IOrderServiceConsumer);

@@ -416,6 +416,21 @@ export default class UserService implements IUserService {
         return null;
        }
     }
+
+    getUsersWithRolesOrPermissions = async (rolesOrPermissions: {roles?: string[], permissions?: string[]}): Promise<User[]> => {
+        let userRoles: UserRole[] = []
+        let permissions: UserPermission[] = []
+        if(rolesOrPermissions.roles?.length){
+            userRoles = await this.roleRepository.contains({name: rolesOrPermissions.roles})
+        }
+
+        if(rolesOrPermissions.permissions?.length){
+            permissions = await this.permissionRepository.contains({name: rolesOrPermissions.permissions})
+        }
+
+        let users = await this.userRepository.or([{roles: userRoles.map(role => role._id)}, {permissions: permissions.map(permission => permission._id)}])
+        return users;
+    }
 }
 
 

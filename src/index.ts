@@ -13,10 +13,11 @@ import { commandOptions, createClient, RedisClientType } from 'redis'
 import { inject, injectable } from "tsyringe";
 import ICacheService, { IICacheService } from "./core/application/contract/services/cache/cache_service";
 import SerializationUtility from "./core/application/common/utilities/serialization_utility";
-import IEventService, { IIEventService } from "./core/application/contract/services/events/event_service";
+import IEventService, { IIEventService } from "./core/application/contract/events/event_service";
 import { EventQueueSizeStrategyMaxLength, EventQueueSizeStrategyRetention } from "./core/domain/model/events/subscribe_event_options";
 import { TimeUnit } from "./core/domain/model/utiliities/time_unit";
 import { orderServiceEventManager } from "./events/event_managers/shop/order_service_event_manager";
+import { productServiceEventManager } from "./events/event_managers/shop/product_service_event_manager";
 // Create a Multer instance with a destination folder for file uploads
 
 dotenv.config();
@@ -38,9 +39,7 @@ app.get("/", (req: Request, res: Response) => {
   res.json("Express + TypeScript Server");
 });
 
-// TEST REDIS
-
-
+// TEST REDIS Connection
 async function bootstrapRedis(){
   try{
     const redis = createClient({url: process.env.REDIS_URL})
@@ -54,68 +53,8 @@ async function bootstrapRedis(){
 }
 
 bootstrapRedis()
-@injectable()
-class TestCache{
-  constructor(@inject(IICacheService) private readonly cache: ICacheService){
-
-  }
-
-  public test = async () => {
-    await this.cache.addAsync("Test_IN_CONFIG_2", {name: "Test in config 2000-100"}, 50)
-    let saved = await this.cache.getAsync("Test_IN_CONFIG_2")
-    return saved
-  }
-}
-
-// let cacheTest = iocContainer.resolve(TestCache);
-// app.get("/test-redis",  async (req, res, next) => {
-//   let response = await cacheTest.test()
-//   return res.json(response);
-// })
-
-/*
-// consumer producer test
-
-class Order {
-  name: string;
-  price: number;
-  qty: number
-}
 
 
-@injectable()
-class TestRedisEventservice{
-   public constructor(@inject(IIEventService)private readonly eventService: IEventService){
-
-   }
-   testsendMessag = async (order: Order) => {
-      let streamName = "STREAM_TEST"
-      let d = new EventQueueSizeStrategyRetention({duration: 30, unit: TimeUnit.seconds});
-      return await this.eventService.publishToQueue(streamName, order, d);
-   }
-}
-
-let resolvedEventService = iocContainer.resolve(IIEventService) as unknown as IEventService
-
-app.post("/test-redis-produce",  async (req: Request<{}, {}, Order>, res: Response, next: NextFunction) => {
-  let eventService = iocContainer.resolve(TestRedisEventservice)
-  let response = await eventService.testsendMessag(req.body)
-  return res.json(response);
-})
-
-resolvedEventService.subscribeToQueue({
-  queueName: "STREAM_TEST",
-  consumerGroupName: "STREAM_TEST_GROUP",
-  consumerName: "STREAM_TEST_CONSUMER",
-  maxNumberOfEntries: 10,
-  messageHandler: async (message: any, messageId: string) => {
-    console.log("Handler for STREAM_TEST Event")
-    let data = message
-    console.log({message, messageId})
-    return true;
-  }
-})
-*/
 
 // MIGRATIONS // PLEASE UNCOMMENT SESSION
 // saveCitiesCountriesStates()
@@ -123,7 +62,7 @@ resolvedEventService.subscribeToQueue({
 
 // consumers
 orderServiceEventManager.consumeCreateOrderService();
-
+productServiceEventManager.consumeCreateReviewService();
 
 //APIs
 app.use("/auth", authenticationRoute);

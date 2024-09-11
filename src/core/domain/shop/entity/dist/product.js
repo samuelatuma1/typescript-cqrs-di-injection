@@ -27,7 +27,7 @@ exports.PackProduct = PackProduct;
 var Product = /** @class */ (function (_super) {
     __extends(Product, _super);
     function Product(init) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         var _this = this;
         var id = new mongoose_1.Types.ObjectId();
         _this = _super.call(this, id) || this;
@@ -36,6 +36,7 @@ var Product = /** @class */ (function (_super) {
         _this.discounts = [];
         _this.isPack = false;
         _this.tags = [];
+        _this.isFeatured = true;
         _this.name = init.name;
         _this.desc = (_a = init.desc) !== null && _a !== void 0 ? _a : "";
         _this.mainImg = (_b = init.mainImg) !== null && _b !== void 0 ? _b : null;
@@ -52,6 +53,7 @@ var Product = /** @class */ (function (_super) {
         _this.packProducts = (_h = init.packProducts) !== null && _h !== void 0 ? _h : [];
         _this.brandId = (_j = init.brandId) !== null && _j !== void 0 ? _j : null;
         _this.tags = (_k = init.tags) !== null && _k !== void 0 ? _k : [];
+        _this.isFeatured = (_l = init.isFeatured) !== null && _l !== void 0 ? _l : true;
         return _this;
     }
     return Product;

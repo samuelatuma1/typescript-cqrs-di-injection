@@ -20,11 +20,14 @@ const tsyringe_1 = require("tsyringe");
 const base_controller_1 = __importDefault(require("./base_controller"));
 const serialization_utility_1 = __importDefault(require("../../core/application/common/utilities/serialization_utility"));
 const mongoose_1 = require("mongoose");
+const product_logic_1 = require("../../core/application/contract/logic/shop/product_logic");
 let ProductController = class ProductController extends base_controller_1.default {
     productService;
-    constructor(productService) {
+    productLogic;
+    constructor(productService, productLogic) {
         super();
         this.productService = productService;
+        this.productLogic = productLogic;
     }
     createProduct = async (req, res, next) => {
         try {
@@ -147,11 +150,21 @@ let ProductController = class ProductController extends base_controller_1.defaul
             next(ex);
         }
     };
+    createReview = async (req, res, next) => {
+        try {
+            let response = await this.productLogic.createReviewForProduct(req.body);
+            return res.json(response);
+        }
+        catch (ex) {
+            next(ex);
+        }
+    };
 };
 ProductController = __decorate([
     (0, tsyringe_1.injectable)(),
     __param(0, (0, tsyringe_1.inject)(product_service_1.IIProductService)),
-    __metadata("design:paramtypes", [Object])
+    __param(1, (0, tsyringe_1.inject)(product_logic_1.IIProductLogic)),
+    __metadata("design:paramtypes", [Object, Object])
 ], ProductController);
 exports.default = ProductController;
 //# sourceMappingURL=product_controller.js.map

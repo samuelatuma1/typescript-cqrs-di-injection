@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.orderServiceEventManager = void 0;
 const program_1 = require("../../../api/program");
-const order_service_consumer_1 = require("../../../core/application/contract/services/events/shop/consumer/order_service_consumer");
+const order_service_consumer_1 = require("../../../core/application/contract/events/shop/consumer/order_service_consumer");
 const tsyringe_1 = require("tsyringe");
 let OrderServiceEventManager = class OrderServiceEventManager {
     orderServiceConsumer;

@@ -28,6 +28,7 @@ import BaseEntity from "../../common/entity/base_entity";
 import UserRole from "./user_role";
 import UserPermission from "./user_permission";
 import Address from "./address";
+import { UserStatus } from "../enum/user_status";
 export default class User extends BaseEntity<Types.ObjectId> {
     name?: string;
     email: string;
@@ -35,7 +36,8 @@ export default class User extends BaseEntity<Types.ObjectId> {
     isactive: boolean;
     isadmin: boolean;
     roles: Types.ObjectId[] | UserRole[];
+    status: UserStatus | string;
     address: Types.ObjectId | Address | null;
     permissions: Types.ObjectId[] | UserPermission[];
-    constructor(email: string, password: string, name?: string, permissions?: Types.ObjectId[] | UserPermission[], roles?: Types.ObjectId[] | UserRole[]);
+    constructor(email: string, password: string, name?: string, permissions?: Types.ObjectId[] | UserPermission[], roles?: Types.ObjectId[] | UserRole[], status?: UserStatus);
 }

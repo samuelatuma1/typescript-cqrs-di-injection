@@ -3,4 +3,5 @@ export default class DateUtility {
     static getUTCNow: () => Date;
     static getMillisecondsInTime: (duration: number, timeUnit: TimeUnit) => number;
     static getUnixTimeInMilliseconds: () => number;
+    static delay: (seconds: number) => Promise<void>;
 }

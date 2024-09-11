@@ -55,7 +55,7 @@ import JwtService from '../core/infrastructure/services/authentication/jwt_servi
 import IRedisConfig, { IIRedisConfig } from '../core/application/common/config/redis_config';
 import { IICacheService } from '../core/application/contract/services/cache/cache_service';
 import { RedisCache } from '../core/infrastructure/services/cache/redis_cache_service';
-import { IIEventService } from '../core/application/contract/services/events/event_service';
+import { IIEventService } from '../core/application/contract/events/event_service';
 import RedisEventService from '../core/infrastructure/services/events/events_service';
 import { IICatalogueService } from '../core/application/contract/services/shop/catalogue_service';
 import CatalogueService from '../core/application/services/shop/catalogue_service';
@@ -69,10 +69,23 @@ import { IIBrandLogic } from '../core/application/contract/logic/shop/brand_logi
 import BrandLogic from '../core/application/logic/shop/brand_logic';
 import { IICategoryLogic } from '../core/application/contract/logic/shop/category_logic';
 import CategoryLogic from '../core/application/logic/shop/category_logic';
-import { IIOrderServiceConsumer } from '../core/application/contract/services/events/shop/consumer/order_service_consumer';
-import OrderServiceConsumer from '../core/application/services/shop/events/consumer/order_service_consumer';
-import { IIOrderServiceProducer } from '../core/application/contract/services/events/shop/producer/order_service_producer';
-import OrderServiceProducer from '../core/application/services/shop/events/producer/order_service_producer';
+import { IIOrderServiceConsumer } from '../core/application/contract/events/shop/consumer/order_service_consumer';
+import OrderServiceConsumer from '../core/application/events/shop/consumer/order_service_consumer';
+import { IIOrderServiceProducer } from '../core/application/contract/events/shop/producer/order_service_producer';
+import OrderServiceProducer from '../core/application/events/shop/producer/order_service_producer';
+import { IIProductLogic } from '../core/application/contract/logic/shop/product_logic';
+import ProductLogic from '../core/application/logic/shop/product_logic';
+import { IIProductServiceConsumer } from '../core/application/contract/events/shop/consumer/product_service_consumer';
+import ProductServiceConsumer from '../core/application/events/shop/consumer/product_service_consumer';
+import { IIProductServiceProducer } from '../core/application/contract/events/shop/producer/product_service_producer';
+import ProductServiceProducer from '../core/application/events/shop/producer/product_service_producer';
+import { IIReviewRepository } from '../core/application/contract/data_access/shop/review_repository';
+import ReviewRepository from '../core/infrastructure/persistence/data_access/shop/review_repository';
+import { IIApiService } from '../core/application/contract/services/api/api_service';
+import { ApiService } from '../core/infrastructure/services/api/api_service';
+import { IEmailJSConfig, IIEmailJSConfig } from '../core/application/common/config/email_config';
+import { IIMailService } from '../core/application/contract/services/notification/email_service';
+import MailService from '../core/infrastructure/services/notification/email_service';
 
 dotenv.config();
 
@@ -90,6 +103,14 @@ var cloudinaryConfig : ICloudinaryConfig = {
 
 var redisConfig : IRedisConfig = {
   REDIS_URL: env.REDIS_URL ?? ''
+}
+
+var emailJSConfig : IEmailJSConfig = {
+  service_id: env.email_js_service_id,
+  template_id: env.email_js_template_id,
+  user_id: env.email_js_user_id,
+  access_token: env.email_js_access_token,
+  url: env.email_js_url
 }
 container.register(IILogger, {
     useClass: Logger
@@ -158,6 +179,10 @@ container.register(IICatalogueRepository, {
   useClass: CatalogueRepository
 })
 
+container.register(IIReviewRepository, {
+  useClass: ReviewRepository
+})
+
 container.register(IICategoryService, {
   useClass: CategoryService
 })
@@ -198,6 +223,10 @@ container.register(IIRedisConfig, {
   useValue: redisConfig
 })
 
+container.register(IIEmailJSConfig, {
+  useValue: emailJSConfig
+})
+
 container.register(IIFileService, {
   useClass: CloudinaryService
 })
@@ -230,6 +259,10 @@ container.register(IICategoryLogic, {
   useClass: CategoryLogic
 })
 
+container.register(IIProductLogic, {
+  useClass: ProductLogic
+})
+
 container.register(IIOrderServiceConsumer, {
   useClass: OrderServiceConsumer
 })
@@ -237,5 +270,22 @@ container.register(IIOrderServiceConsumer, {
 container.register(IIOrderServiceProducer, {
   useClass: OrderServiceProducer
 })
+
+container.register(IIProductServiceConsumer, {
+  useClass: ProductServiceConsumer
+})
+
+container.register(IIProductServiceProducer, {
+  useClass: ProductServiceProducer
+})
+
+container.register(IIApiService, {
+  useClass: ApiService
+})
+
+container.register(IIMailService, {
+  useClass: MailService
+})
+
 
 export {container as iocContainer}

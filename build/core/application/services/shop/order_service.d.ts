@@ -35,7 +35,7 @@ import Address from "../../../domain/authentication/entity/address";
 import Order from "../../../domain/shop/entity/order";
 import OrderItem from "../../../domain/shop/entity/order_item";
 import IOrderRepository from "../../../application/contract/data_access/shop/order_repository";
-import { IOrderServiceProducer } from "../../../application/contract/services/events/shop/producer/order_service_producer";
+import { IOrderServiceProducer } from "../../contract/events/shop/producer/order_service_producer";
 import OrderPlacedEventDTO from "../../../domain/model/events/dto/order_placed_event_dto";
 import IAddressService from "../../../application/contract/services/authentication/address_service";
 export default class OrderService implements IOrderService {

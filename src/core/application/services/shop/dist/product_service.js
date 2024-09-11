@@ -112,7 +112,7 @@ var ProductService = /** @class */ (function () {
             });
         }); };
         this.convertCreateProductRequestToProduct = function (createProductRequest, filtersForProductMap) {
-            var _a, _b, _c, _d, _e, _f;
+            var _a, _b, _c, _d, _e, _f, _g;
             return new product_1["default"]({
                 name: createProductRequest.name,
                 desc: (_a = createProductRequest.desc) !== null && _a !== void 0 ? _a : "",
@@ -124,7 +124,8 @@ var ProductService = /** @class */ (function () {
                 filters: filtersForProductMap,
                 categories: (_f = (_e = createProductRequest.categories) === null || _e === void 0 ? void 0 : _e.map(function (cat) { return new mongoose_1.Types.ObjectId(cat); })) !== null && _f !== void 0 ? _f : [],
                 extras: createProductRequest.extras,
-                isPack: createProductRequest.isPack
+                isPack: createProductRequest.isPack,
+                isFeatured: (_g = createProductRequest.isFeatured) !== null && _g !== void 0 ? _g : true
             });
         };
         this.getAllCategoryFiltersForProduct = function (categoriesIds) { return __awaiter(_this, void 0, Promise, function () {
@@ -429,6 +430,9 @@ var ProductService = /** @class */ (function () {
             if (updateProductRequest.currency && product.currency !== updateProductRequest.currency) {
                 updateData.currency = updateProductRequest.currency;
             }
+            if (updateProductRequest.isFeatured && product.isFeatured !== updateProductRequest.isFeatured) {
+                updateData.isFeatured = updateProductRequest.isFeatured;
+            }
             if (updateProductRequest.inventory) {
                 updateData.inventory = product.inventory;
                 updateData.inventory.qtyAvailable = updateProductRequest.inventory.updateType === update_product_inventory_type_1.UpdateProductInventoryType.increment ?
@@ -488,7 +492,7 @@ var ProductService = /** @class */ (function () {
                         _d.label = 1;
                     case 1:
                         _d.trys.push([1, 10, , 11]);
-                        // get orignial product
+                        // check and update fields list
                         this.eventTracer.say("Building fieldsListToUpdate");
                         return [4 /*yield*/, this.buildAddAndRemoveFieldListsForProduct(updateProductRequest)];
                     case 2:
@@ -626,7 +630,7 @@ var ProductService = /** @class */ (function () {
                         this.eventTracer.say("Added all filters to product");
                         product.allFiltersForProduct = allCategoriesFiltersDict;
                         this.eventTracer.isSuccessWithResponseAndMessage(product);
-                        console.log({ pF: product.allFiltersForProduct, product: product, isProductResponse: product instanceof product_response_1.ProductResponse });
+                        //console.log({pF: product.allFiltersForProduct, product, isProductResponse: product instanceof ProductResponse})
                         return [2 /*return*/, product];
                     case 4:
                         ex_5 = _a.sent();

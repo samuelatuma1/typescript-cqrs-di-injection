@@ -35,6 +35,7 @@ class Product extends base_entity_1.default {
     catalogues;
     brandId;
     tags = [];
+    isFeatured = true;
     constructor(init) {
         const id = new mongoose_1.Types.ObjectId();
         super(id);
@@ -54,6 +55,7 @@ class Product extends base_entity_1.default {
         this.packProducts = init.packProducts ?? [];
         this.brandId = init.brandId ?? null;
         this.tags = init.tags ?? [];
+        this.isFeatured = init.isFeatured ?? true;
     }
 }
 exports.default = Product;

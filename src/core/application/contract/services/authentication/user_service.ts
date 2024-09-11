@@ -31,6 +31,7 @@ export default interface IUserService {
 
     signInUser(signInUser: SignInUserRequest) : Promise<SignInUserResponse>
     decodeAccessToken(token: string): AccessTokenPayload | null
+    getUsersWithRolesOrPermissions(rolesOrPermissions: {roles?: string[], permissions?: string[]}): Promise<User[]>
 }
 
 export const IIUserService = "IUserService";

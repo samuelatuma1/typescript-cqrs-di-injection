@@ -52,6 +52,7 @@ export interface CreateProductRequestInit {
     isPack?: boolean;
     brandId?: Types.ObjectId | string;
     tags?: string[];
+    isFeatured?: boolean;
 }
 export declare class CreateProductRequest {
     name: string;
@@ -69,6 +70,7 @@ export declare class CreateProductRequest {
     brandId: Types.ObjectId | string;
     isPack: boolean;
     tags?: string[];
+    isFeatured?: boolean;
     constructor(init?: CreateProductRequestInit | null);
 }
 export declare class CreatePackProduct {
@@ -105,6 +107,7 @@ export declare class UpdateProductRequest {
     removeTags?: string[];
     addExtras?: ProductExtra[];
     removeExtras?: ProductExtra[];
+    isFeatured?: boolean;
 }
 export declare class ApplyProductToDiscount {
     productId: Types.ObjectId | string;

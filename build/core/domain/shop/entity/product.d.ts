@@ -50,6 +50,7 @@ export interface ProductInit {
     packProducts?: PackProduct[];
     brandId?: Types.ObjectId | null;
     tags?: string[];
+    isFeatured?: boolean;
 }
 export declare class PackProduct {
     _id?: Types.ObjectId;
@@ -79,6 +80,7 @@ export default class Product extends BaseEntity<Types.ObjectId> {
     catalogues: Catalogue[] | Types.ObjectId[];
     brandId?: Types.ObjectId | null;
     tags: string[];
+    isFeatured: boolean;
     constructor(init: ProductInit);
 }
 declare class Variant extends Product {

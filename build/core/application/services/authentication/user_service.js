@@ -377,6 +377,18 @@ let UserService = class UserService {
             return null;
         }
     };
+    getUsersWithRolesOrPermissions = async (rolesOrPermissions) => {
+        let userRoles = [];
+        let permissions = [];
+        if (rolesOrPermissions.roles?.length) {
+            userRoles = await this.roleRepository.contains({ name: rolesOrPermissions.roles });
+        }
+        if (rolesOrPermissions.permissions?.length) {
+            permissions = await this.permissionRepository.contains({ name: rolesOrPermissions.permissions });
+        }
+        let users = await this.userRepository.or([{ roles: userRoles.map(role => role._id) }, { permissions: permissions.map(permission => permission._id) }]);
+        return users;
+    };
 };
 UserService = __decorate([
     (0, tsyringe_1.injectable)(),

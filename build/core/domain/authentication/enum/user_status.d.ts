@@ -1,0 +1,5 @@
+export declare enum UserStatus {
+    AUTO_CREATED = "AUTO_CREATED",
+    PENDING_VERIFICATION = "PENDING_VERIFICATION",
+    VERIFIED = "VERIFIED"
+}

@@ -1,5 +1,5 @@
 import { iocContainer } from "../../../api/program";
-import IOrderServiceConsumer, { IIOrderServiceConsumer } from "../../../core/application/contract/services/events/shop/consumer/order_service_consumer";
+import IOrderServiceConsumer, { IIOrderServiceConsumer } from "../../../core/application/contract/events/shop/consumer/order_service_consumer";
 import { inject, injectable } from "tsyringe";
 
 @injectable()

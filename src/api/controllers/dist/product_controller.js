@@ -63,11 +63,13 @@ var tsyringe_1 = require("tsyringe");
 var base_controller_1 = require("./base_controller");
 var serialization_utility_1 = require("../../core/application/common/utilities/serialization_utility");
 var mongoose_1 = require("mongoose");
+var product_logic_1 = require("../../core/application/contract/logic/shop/product_logic");
 var ProductController = /** @class */ (function (_super) {
     __extends(ProductController, _super);
-    function ProductController(productService) {
+    function ProductController(productService, productLogic) {
         var _this = _super.call(this) || this;
         _this.productService = productService;
+        _this.productLogic = productLogic;
         _this.createProduct = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
             var reqBody, createdProduct, ex_1;
             var _a;
@@ -275,11 +277,30 @@ var ProductController = /** @class */ (function (_super) {
                 }
             });
         }); };
+        _this.createReview = function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+            var response, ex_10;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, this.productLogic.createReviewForProduct(req.body)];
+                    case 1:
+                        response = _a.sent();
+                        return [2 /*return*/, res.json(response)];
+                    case 2:
+                        ex_10 = _a.sent();
+                        next(ex_10);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        }); };
         return _this;
     }
     ProductController = __decorate([
         tsyringe_1.injectable(),
-        __param(0, tsyringe_1.inject(product_service_1.IIProductService))
+        __param(0, tsyringe_1.inject(product_service_1.IIProductService)),
+        __param(1, tsyringe_1.inject(product_logic_1.IIProductLogic))
     ], ProductController);
     return ProductController;
 }(base_controller_1["default"]));

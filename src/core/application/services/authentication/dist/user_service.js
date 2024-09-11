@@ -524,6 +524,32 @@ var UserService = /** @class */ (function () {
                 return null;
             }
         };
+        this.getUsersWithRolesOrPermissions = function (rolesOrPermissions) { return __awaiter(_this, void 0, Promise, function () {
+            var userRoles, permissions, users;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        userRoles = [];
+                        permissions = [];
+                        if (!((_a = rolesOrPermissions.roles) === null || _a === void 0 ? void 0 : _a.length)) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.roleRepository.contains({ name: rolesOrPermissions.roles })];
+                    case 1:
+                        userRoles = _c.sent();
+                        _c.label = 2;
+                    case 2:
+                        if (!((_b = rolesOrPermissions.permissions) === null || _b === void 0 ? void 0 : _b.length)) return [3 /*break*/, 4];
+                        return [4 /*yield*/, this.permissionRepository.contains({ name: rolesOrPermissions.permissions })];
+                    case 3:
+                        permissions = _c.sent();
+                        _c.label = 4;
+                    case 4: return [4 /*yield*/, this.userRepository.or([{ roles: userRoles.map(function (role) { return role._id; }) }, { permissions: permissions.map(function (permission) { return permission._id; }) }])];
+                    case 5:
+                        users = _c.sent();
+                        return [2 /*return*/, users];
+                }
+            });
+        }); };
     }
     UserService = __decorate([
         tsyringe_1.injectable(),

@@ -95,7 +95,8 @@ let ProductService = class ProductService {
             filters: filtersForProductMap,
             categories: createProductRequest.categories?.map(cat => new mongoose_1.Types.ObjectId(cat)) ?? [],
             extras: createProductRequest.extras,
-            isPack: createProductRequest.isPack
+            isPack: createProductRequest.isPack,
+            isFeatured: createProductRequest.isFeatured ?? true
         });
     };
     getAllCategoryFiltersForProduct = async (categoriesIds) => {
@@ -285,6 +286,9 @@ let ProductService = class ProductService {
         if (updateProductRequest.currency && product.currency !== updateProductRequest.currency) {
             updateData.currency = updateProductRequest.currency;
         }
+        if (updateProductRequest.isFeatured && product.isFeatured !== updateProductRequest.isFeatured) {
+            updateData.isFeatured = updateProductRequest.isFeatured;
+        }
         if (updateProductRequest.inventory) {
             updateData.inventory = product.inventory;
             updateData.inventory.qtyAvailable = updateProductRequest.inventory.updateType === update_product_inventory_type_1.UpdateProductInventoryType.increment ?
@@ -328,7 +332,7 @@ let ProductService = class ProductService {
         this.eventTracer.say("Updating Product");
         this.eventTracer.request = updateProductRequest;
         try {
-            // get orignial product
+            // check and update fields list
             this.eventTracer.say("Building fieldsListToUpdate");
             let fieldsListToUpdate = await this.buildAddAndRemoveFieldListsForProduct(updateProductRequest);
             let { addToFieldsUpdate, removeFromFieldsUpdate } = fieldsListToUpdate ?? {};
@@ -404,7 +408,7 @@ let ProductService = class ProductService {
             this.eventTracer.say(`Added all filters to product`);
             product.allFiltersForProduct = allCategoriesFiltersDict;
             this.eventTracer.isSuccessWithResponseAndMessage(product);
-            console.log({ pF: product.allFiltersForProduct, product, isProductResponse: product instanceof product_response_1.ProductResponse });
+            //console.log({pF: product.allFiltersForProduct, product, isProductResponse: product instanceof ProductResponse})
             return product;
         }
         catch (ex) {

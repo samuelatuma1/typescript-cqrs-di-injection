@@ -18,7 +18,7 @@ import { AddProductsToCatalogueRequest, CreateCatalogueRequest, QueryCatalogue, 
 import IBrandLogic, { IIBrandLogic } from "../../core/application/contract/logic/shop/brand_logic";
 import { CreateBrandRequest } from "../../core/domain/shop/dto/requests/brand_requests";
 import { ICategoryLogic, IICategoryLogic } from "../../core/application/contract/logic/shop/category_logic";
-import Address from "core/domain/authentication/entity/address";
+import Address from "../../core/domain/authentication/entity/address";
 
 @injectable()
 export default class ShopController extends BaseController{
@@ -350,5 +350,8 @@ export default class ShopController extends BaseController{
       next(ex)
     }
   }
+
+
+  
 
 }

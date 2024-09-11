@@ -27,17 +27,34 @@ import User from "../../../domain/authentication/entity/user";
 import BaseEntity from "../../../domain/common/entity/base_entity";
 import { Types } from "mongoose";
 export declare class ReviewResponse {
-    title: string;
     body: string;
     _id: Types.ObjectId;
     responseBy: Types.ObjectId | User | null;
 }
-export default class Review extends BaseEntity<Types.ObjectId> {
+export declare class FoundHelpful {
+    userId: Types.ObjectId | null;
+    userEmail: string | null;
+    helpful: boolean;
+}
+export interface ReviewInit {
+    productId: Types.ObjectId;
     rating: number;
     reviewedBy: User | Types.ObjectId | null;
     title: string;
     body: string;
     reviewedAt: Date;
+    wouldRecommend: boolean;
+}
+export default class Review extends BaseEntity<Types.ObjectId> {
+    productId: Types.ObjectId;
+    rating: number;
+    reviewedBy: User | Types.ObjectId | null;
+    reviewedAt: Date;
+    title: string;
+    body: string;
     responses: ReviewResponse[];
     wouldRecommend: boolean;
+    isFeatured: boolean;
+    foundHelpful: FoundHelpful[];
+    constructor(init: ReviewInit);
 }

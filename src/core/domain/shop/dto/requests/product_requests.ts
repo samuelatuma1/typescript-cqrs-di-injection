@@ -26,6 +26,7 @@ export interface CreateProductRequestInit {
     isPack?: boolean;
     brandId?: Types.ObjectId | string;
     tags?: string[];
+    isFeatured?: boolean
 
 }
 export class CreateProductRequest {
@@ -41,7 +42,8 @@ export class CreateProductRequest {
     public extras: ProductExtra[] = [];
     brandId: Types.ObjectId | string;
     public isPack: boolean = false;
-    public tags?: string[] = []
+    public tags?: string[] = [];
+    public isFeatured?: boolean = true
     public constructor(init: CreateProductRequestInit | null = null ){
         this.name = init?.name;
         this.desc = init?.desc ?? "";
@@ -55,7 +57,8 @@ export class CreateProductRequest {
         this.extras = init?.extras ?? [];
         this.isPack = init?.isPack ?? false;
         this.brandId = init?.brandId ?? null;
-        this.tags = init?.tags ?? []
+        this.tags = init?.tags ?? [];
+        this.isFeatured = init?.isFeatured ?? true
     }
 }
 
@@ -72,7 +75,7 @@ export class UpdatePackProduct{
     public desc?: string;
     public mainImg?: UploadFile | null ;
     public otherMedia?: UploadFile[];
-    public qty?: number = 1;
+    public qty?: number
 }
 
 
@@ -97,6 +100,7 @@ export class UpdateProductRequest {
     public removeTags?: string[] = [];
     public addExtras?: ProductExtra[] = [];
     public removeExtras?: ProductExtra[] = [];
+    public isFeatured?: boolean;
 }
 
 
@@ -114,3 +118,4 @@ export class BestSellersQuery extends Pagination<Types.ObjectId> {
     
 
 }
+

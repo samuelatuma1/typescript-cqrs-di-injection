@@ -28,9 +28,12 @@ import IProductService from "../../core/application/contract/services/shop/produ
 import { BestSellersQuery, UpdateProductRequest } from "../../core/domain/shop/dto/requests/product_requests";
 import BaseController from "./base_controller";
 import { Types } from "mongoose";
+import { CreateProductReview } from "../../core/domain/shop/dto/requests/review_requests";
+import IProductLogic from "../../core/application/contract/logic/shop/product_logic";
 export default class ProductController extends BaseController {
     private readonly productService;
-    constructor(productService: IProductService);
+    private readonly productLogic;
+    constructor(productService: IProductService, productLogic: IProductLogic);
     createProduct: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>>>;
     updateProduct: (req: Request<{
         productId: Types.ObjectId | string;
@@ -60,4 +63,5 @@ export default class ProductController extends BaseController {
         packProductId: Types.ObjectId | string;
     }>, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>>>;
     bestSellers: (req: Request<{}, {}, {}, BestSellersQuery>, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>>>;
+    createReview: (req: Request<{}, {}, CreateProductReview>, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>>>;
 }

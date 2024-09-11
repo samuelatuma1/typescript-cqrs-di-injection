@@ -46,5 +46,9 @@ export default interface IUserService {
     getUserByEmail(email: string): Promise<User | null>;
     signInUser(signInUser: SignInUserRequest): Promise<SignInUserResponse>;
     decodeAccessToken(token: string): AccessTokenPayload | null;
+    getUsersWithRolesOrPermissions(rolesOrPermissions: {
+        roles?: string[];
+        permissions?: string[];
+    }): Promise<User[]>;
 }
 export declare const IIUserService = "IUserService";

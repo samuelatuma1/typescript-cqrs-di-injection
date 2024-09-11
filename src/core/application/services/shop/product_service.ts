@@ -63,7 +63,9 @@ export default class ProductService implements IProductService {
             filters: filtersForProductMap,
             categories: createProductRequest.categories?.map(cat => new Types.ObjectId(cat)) ?? [],
             extras: createProductRequest.extras,
-            isPack: createProductRequest.isPack
+            isPack: createProductRequest.isPack,
+            isFeatured: createProductRequest.isFeatured ?? true
+            
         });
     }
 
@@ -275,6 +277,9 @@ export default class ProductService implements IProductService {
         if (updateProductRequest.currency && product.currency !== updateProductRequest.currency) {
             updateData.currency = updateProductRequest.currency;
         }
+        if(updateProductRequest.isFeatured && product.isFeatured !== updateProductRequest.isFeatured){
+            updateData.isFeatured = updateProductRequest.isFeatured
+        }
 
         if(updateProductRequest.inventory){
             updateData.inventory = product.inventory;
@@ -324,7 +329,7 @@ export default class ProductService implements IProductService {
         this.eventTracer.say("Updating Product");
         this.eventTracer.request = updateProductRequest
         try{
-            // get orignial product
+            // check and update fields list
             this.eventTracer.say("Building fieldsListToUpdate")
             let fieldsListToUpdate = await this.buildAddAndRemoveFieldListsForProduct(updateProductRequest)
             let { addToFieldsUpdate, removeFromFieldsUpdate} = fieldsListToUpdate ?? {}
@@ -332,7 +337,7 @@ export default class ProductService implements IProductService {
                 this.eventTracer.say("Updating fields having list")
                 await this.productRepository.addAndRemoveFromFieldsList({_id: productId}, addToFieldsUpdate, removeFromFieldsUpdate)
             }
-
+            
             this.eventTracer.say(`Product gotten for product with id ${productId}`);
             // check and update fields that changed
             let product = await this.getProductByIdOrRaiseException(productId); // get product with updated fields list
@@ -417,7 +422,7 @@ export default class ProductService implements IProductService {
             this.eventTracer.say(`Added all filters to product`);
             product.allFiltersForProduct = allCategoriesFiltersDict;
             this.eventTracer.isSuccessWithResponseAndMessage(product);
-            console.log({pF: product.allFiltersForProduct, product, isProductResponse: product instanceof ProductResponse})
+            //console.log({pF: product.allFiltersForProduct, product, isProductResponse: product instanceof ProductResponse})
             return product;
         }
         catch(ex){

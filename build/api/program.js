@@ -62,7 +62,7 @@ const jwt_service_2 = __importDefault(require("../core/infrastructure/services/a
 const redis_config_1 = require("../core/application/common/config/redis_config");
 const cache_service_1 = require("../core/application/contract/services/cache/cache_service");
 const redis_cache_service_1 = require("../core/infrastructure/services/cache/redis_cache_service");
-const event_service_1 = require("../core/application/contract/services/events/event_service");
+const event_service_1 = require("../core/application/contract/events/event_service");
 const events_service_1 = __importDefault(require("../core/infrastructure/services/events/events_service"));
 const catalogue_service_1 = require("../core/application/contract/services/shop/catalogue_service");
 const catalogue_service_2 = __importDefault(require("../core/application/services/shop/catalogue_service"));
@@ -76,10 +76,23 @@ const brand_logic_1 = require("../core/application/contract/logic/shop/brand_log
 const brand_logic_2 = __importDefault(require("../core/application/logic/shop/brand_logic"));
 const category_logic_1 = require("../core/application/contract/logic/shop/category_logic");
 const category_logic_2 = __importDefault(require("../core/application/logic/shop/category_logic"));
-const order_service_consumer_1 = require("../core/application/contract/services/events/shop/consumer/order_service_consumer");
-const order_service_consumer_2 = __importDefault(require("../core/application/services/shop/events/consumer/order_service_consumer"));
-const order_service_producer_1 = require("../core/application/contract/services/events/shop/producer/order_service_producer");
-const order_service_producer_2 = __importDefault(require("../core/application/services/shop/events/producer/order_service_producer"));
+const order_service_consumer_1 = require("../core/application/contract/events/shop/consumer/order_service_consumer");
+const order_service_consumer_2 = __importDefault(require("../core/application/events/shop/consumer/order_service_consumer"));
+const order_service_producer_1 = require("../core/application/contract/events/shop/producer/order_service_producer");
+const order_service_producer_2 = __importDefault(require("../core/application/events/shop/producer/order_service_producer"));
+const product_logic_1 = require("../core/application/contract/logic/shop/product_logic");
+const product_logic_2 = __importDefault(require("../core/application/logic/shop/product_logic"));
+const product_service_consumer_1 = require("../core/application/contract/events/shop/consumer/product_service_consumer");
+const product_service_consumer_2 = __importDefault(require("../core/application/events/shop/consumer/product_service_consumer"));
+const product_service_producer_1 = require("../core/application/contract/events/shop/producer/product_service_producer");
+const product_service_producer_2 = __importDefault(require("../core/application/events/shop/producer/product_service_producer"));
+const review_repository_1 = require("../core/application/contract/data_access/shop/review_repository");
+const review_repository_2 = __importDefault(require("../core/infrastructure/persistence/data_access/shop/review_repository"));
+const api_service_1 = require("../core/application/contract/services/api/api_service");
+const api_service_2 = require("../core/infrastructure/services/api/api_service");
+const email_config_1 = require("../core/application/common/config/email_config");
+const email_service_1 = require("../core/application/contract/services/notification/email_service");
+const email_service_2 = __importDefault(require("../core/infrastructure/services/notification/email_service"));
 dotenv_1.default.config();
 let env = process.env;
 var serviceConfig = {
@@ -93,6 +106,13 @@ var cloudinaryConfig = {
 };
 var redisConfig = {
     REDIS_URL: env.REDIS_URL ?? ''
+};
+var emailJSConfig = {
+    service_id: env.email_js_service_id,
+    template_id: env.email_js_template_id,
+    user_id: env.email_js_user_id,
+    access_token: env.email_js_access_token,
+    url: env.email_js_url
 };
 tsyringe_1.container.register(logger_1.IILogger, {
     useClass: logger_2.default
@@ -148,6 +168,9 @@ tsyringe_1.container.register(special_offer_repository_1.IISpecialOfferRepositor
 tsyringe_1.container.register(catalogue_repository_1.IICatalogueRepository, {
     useClass: catalogue_repository_2.default
 });
+tsyringe_1.container.register(review_repository_1.IIReviewRepository, {
+    useClass: review_repository_2.default
+});
 tsyringe_1.container.register(category_service_2.IICategoryService, {
     useClass: category_service_1.default
 });
@@ -178,6 +201,9 @@ tsyringe_1.container.register(cloudinary_config_1.IICloudinaryConfig, {
 tsyringe_1.container.register(redis_config_1.IIRedisConfig, {
     useValue: redisConfig
 });
+tsyringe_1.container.register(email_config_1.IIEmailJSConfig, {
+    useValue: emailJSConfig
+});
 tsyringe_1.container.register(file_service_1.IIFileService, {
     useClass: file_service_2.default
 });
@@ -202,10 +228,25 @@ tsyringe_1.container.register(brand_logic_1.IIBrandLogic, {
 tsyringe_1.container.register(category_logic_1.IICategoryLogic, {
     useClass: category_logic_2.default
 });
+tsyringe_1.container.register(product_logic_1.IIProductLogic, {
+    useClass: product_logic_2.default
+});
 tsyringe_1.container.register(order_service_consumer_1.IIOrderServiceConsumer, {
     useClass: order_service_consumer_2.default
 });
 tsyringe_1.container.register(order_service_producer_1.IIOrderServiceProducer, {
     useClass: order_service_producer_2.default
+});
+tsyringe_1.container.register(product_service_consumer_1.IIProductServiceConsumer, {
+    useClass: product_service_consumer_2.default
+});
+tsyringe_1.container.register(product_service_producer_1.IIProductServiceProducer, {
+    useClass: product_service_producer_2.default
+});
+tsyringe_1.container.register(api_service_1.IIApiService, {
+    useClass: api_service_2.ApiService
+});
+tsyringe_1.container.register(email_service_1.IIMailService, {
+    useClass: email_service_2.default
 });
 //# sourceMappingURL=program.js.map

@@ -14,7 +14,7 @@ import OrderItem from "../../../domain/shop/entity/order_item";
 import { OrderStatus } from "../../../domain/shop/enum/order_status";
 import IOrderRepository, { IIOrderRepository } from "../../../application/contract/data_access/shop/order_repository";
 import { ItemStatus } from "../../../domain/shop/enum/item_status";
-import { IIOrderServiceProducer, IOrderServiceProducer } from "../../../application/contract/services/events/shop/producer/order_service_producer";
+import { IIOrderServiceProducer, IOrderServiceProducer } from "../../contract/events/shop/producer/order_service_producer";
 import DateUtility from "../../../application/common/utilities/date_utility";
 import OrderPlacedEventDTO from "../../../domain/model/events/dto/order_placed_event_dto";
 

@@ -6,11 +6,14 @@ import BaseController from "./base_controller";
 import SerializationUtility from "../../core/application/common/utilities/serialization_utility";
 import { Types } from "mongoose";
 import UploadFile from "../../core/domain/common/model/upload_file";
+import { CreateProductReview } from "../../core/domain/shop/dto/requests/review_requests";
+import IProductLogic, { IIProductLogic } from "../../core/application/contract/logic/shop/product_logic";
 
 @injectable()
 export default class ProductController extends BaseController {
     public constructor(
-        @inject(IIProductService) private readonly productService: IProductService
+        @inject(IIProductService) private readonly productService: IProductService,
+        @inject(IIProductLogic) private readonly productLogic: IProductLogic
     ){
         super();
     }
@@ -152,6 +155,16 @@ export default class ProductController extends BaseController {
             req.query.pageSize = parseInt(pageSize.toString());
             console.log({query: req.query})
             let response = await this.productService.bestSellers(req.query)
+            return res.json(response)
+        }
+        catch(ex){
+            next(ex);
+        }
+    }
+
+    public createReview = async (req: Request<{}, {}, CreateProductReview>, res: Response, next: NextFunction) => {
+        try{
+            let response = await this.productLogic.createReviewForProduct(req.body)
             return res.json(response)
         }
         catch(ex){

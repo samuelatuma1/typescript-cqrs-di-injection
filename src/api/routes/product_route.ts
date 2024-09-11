@@ -31,8 +31,15 @@ productRoute.put("/update-pack-product/:productId", upload.fields([{name: 'mainI
 
 productRoute.get("/special-offer/:offerId", (req: Request<{offerId: Types.ObjectId }>, res, next ) => productController.specialOffers(req, res, next));
 
+productRoute.post("/review", (req: Request<{productId: string}>, res, next) => productController.createReview(req, res, next))
+
 productRoute.get("/best-sellers", (req: Request, res, next) => productController.bestSellers(req, res, next));
+
+
+
 productRoute.get("/:productId", (req: Request<{productId: string}>, res, next) => productController.getProduct(req, res, next))
 productRoute.put("/:productId", (req: Request<{productId: string}>, res, next) => productController.updateProduct(req, res, next))
+
+
 
 export default productRoute;

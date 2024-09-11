@@ -40,7 +40,7 @@ import ICatalogueService from "../../core/application/contract/services/shop/cat
 import { AddProductsToCatalogueRequest, QueryCatalogue, RemoveProductsToCatalogueRequest } from "../../core/domain/shop/dto/requests/catalogue_requests";
 import IBrandLogic from "../../core/application/contract/logic/shop/brand_logic";
 import { ICategoryLogic } from "../../core/application/contract/logic/shop/category_logic";
-import Address from "core/domain/authentication/entity/address";
+import Address from "../../core/domain/authentication/entity/address";
 export default class ShopController extends BaseController {
     private categoryService;
     private readonly productService;

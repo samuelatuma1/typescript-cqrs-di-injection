@@ -82,7 +82,9 @@ let RedisEventService = class RedisEventService {
         const idInitialPosition = '0';
         console.log({ options });
         // if consumer group has not been created create consumer group
-        if (!(await connection.exists(options.queueName))) {
+        let doesQueueExist = await connection.exists(options.queueName);
+        console.log({ doesQueueExist, queueName: options.queueName });
+        if (!doesQueueExist) {
             this.eventTracer.say(`Creating new Consumer group with name ${options.consumerGroupName} for queue ${options.queueName}`);
             await connection.xGroupCreate(options.queueName, options.consumerGroupName, idInitialPosition, { MKSTREAM: true });
         }

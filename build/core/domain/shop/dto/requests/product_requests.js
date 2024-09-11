@@ -26,6 +26,7 @@ class CreateProductRequest {
     brandId;
     isPack = false;
     tags = [];
+    isFeatured = true;
     constructor(init = null) {
         this.name = init?.name;
         this.desc = init?.desc ?? "";
@@ -40,6 +41,7 @@ class CreateProductRequest {
         this.isPack = init?.isPack ?? false;
         this.brandId = init?.brandId ?? null;
         this.tags = init?.tags ?? [];
+        this.isFeatured = init?.isFeatured ?? true;
     }
 }
 exports.CreateProductRequest = CreateProductRequest;
@@ -56,7 +58,7 @@ class UpdatePackProduct {
     desc;
     mainImg;
     otherMedia;
-    qty = 1;
+    qty;
 }
 exports.UpdatePackProduct = UpdatePackProduct;
 class UpdateProductInventory {
@@ -81,6 +83,7 @@ class UpdateProductRequest {
     removeTags = [];
     addExtras = [];
     removeExtras = [];
+    isFeatured;
 }
 exports.UpdateProductRequest = UpdateProductRequest;
 class ApplyProductToDiscount {

@@ -21,6 +21,7 @@ productRoute.post("/add-pack-products/:productId", multer_upload_1.upload.fields
 productRoute.delete("/delete-pack-product/:productId", (req, res, next) => productController.deletePackProduct(req, res, next));
 productRoute.put("/update-pack-product/:productId", multer_upload_1.upload.fields([{ name: 'mainImg', maxCount: 1 }, { name: 'otherMedia', maxCount: 10 }]), (req, res, next) => productController.updatePackProduct(req, res, next));
 productRoute.get("/special-offer/:offerId", (req, res, next) => productController.specialOffers(req, res, next));
+productRoute.post("/review", (req, res, next) => productController.createReview(req, res, next));
 productRoute.get("/best-sellers", (req, res, next) => productController.bestSellers(req, res, next));
 productRoute.get("/:productId", (req, res, next) => productController.getProduct(req, res, next));
 productRoute.put("/:productId", (req, res, next) => productController.updateProduct(req, res, next));

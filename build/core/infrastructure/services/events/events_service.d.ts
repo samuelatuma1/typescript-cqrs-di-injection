@@ -1,6 +1,6 @@
 import IRedisConfig from "../../../application/common/config/redis_config";
 import IEventTracer from "../../../application/contract/observability/event_tracer";
-import IEventService from "../../../application/contract/services/events/event_service";
+import IEventService from "../../../application/contract/events/event_service";
 import { EventQueueSizeStrategyMaxLength, EventQueueSizeStrategyRetention, listenToQueueOptions } from "../../../domain/model/events/subscribe_event_options";
 export default class RedisEventService implements IEventService {
     private readonly config;

@@ -121,7 +121,7 @@ var RedisEventService = /** @class */ (function () {
             });
         }); };
         this.subscribeToQueue = function (options) { return __awaiter(_this, void 0, Promise, function () {
-            var connection, idInitialPosition, stream, dataArr, _i, dataArr_1, data, streamKeyName, _a, _b, message, callBack, retryCount, maxRetryCount, dlqName;
+            var connection, idInitialPosition, doesQueueExist, stream, dataArr, _i, dataArr_1, data, streamKeyName, _a, _b, message, callBack, retryCount, maxRetryCount, dlqName;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0: return [4 /*yield*/, this.getRedisConnection()];
@@ -134,7 +134,9 @@ var RedisEventService = /** @class */ (function () {
                         console.log({ options: options });
                         return [4 /*yield*/, connection.exists(options.queueName)];
                     case 2:
-                        if (!!(_c.sent())) return [3 /*break*/, 4];
+                        doesQueueExist = _c.sent();
+                        console.log({ doesQueueExist: doesQueueExist, queueName: options.queueName });
+                        if (!!doesQueueExist) return [3 /*break*/, 4];
                         this.eventTracer.say("Creating new Consumer group with name " + options.consumerGroupName + " for queue " + options.queueName);
                         return [4 /*yield*/, connection.xGroupCreate(options.queueName, options.consumerGroupName, idInitialPosition, { MKSTREAM: true })];
                     case 3:

@@ -72,6 +72,7 @@ export default class ProductService implements IProductService {
         catalogues: any;
         brandId?: any;
         tags: any;
+        isFeatured: any;
         _id: any;
         recordStatus: any;
         createdAt: any;
@@ -103,6 +104,7 @@ export default class ProductService implements IProductService {
             catalogues: any[];
             brandId?: any[];
             tags: any[];
+            isFeatured: any[];
             _id: any[];
             recordStatus: any[];
             createdAt: any[];
@@ -161,6 +163,9 @@ export default class ProductService implements IProductService {
                 [key: string]: any;
             };
             tags: any[] | {
+                [key: string]: any;
+            };
+            isFeatured: any[] | {
                 [key: string]: any;
             };
             _id: any[] | {
